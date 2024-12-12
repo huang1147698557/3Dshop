@@ -11,6 +11,7 @@ import com.sgm.a3dshop.data.entity.Product
 import com.sgm.a3dshop.data.entity.SaleRecord
 import com.sgm.a3dshop.data.entity.VoiceNote
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.*
 import java.net.ServerSocket
@@ -34,6 +35,7 @@ class DataTransferManager(private val context: Context) {
         const val DISCOVERY_MESSAGE = "3DSHOP_DISCOVERY"
         const val DISCOVERY_TIMEOUT = 3000 // 3秒超时
         const val MAX_RETRY_COUNT = 5 // 最大重试次数
+        const val TCP_CONNECT_DELAY = 1000L // TCP连接前等待1秒
     }
 
     private val database = AppDatabase.getDatabase(context)
@@ -210,9 +212,9 @@ class DataTransferManager(private val context: Context) {
             // 发送UDP广播寻找接收方
             progress.onComplete(false, "正在寻找接收方...")
             var receiverAddress: String? = null
-            var retryCount = 0
+            var discoveryRetryCount = 0
             
-            while (receiverAddress == null && retryCount < MAX_RETRY_COUNT) {
+            while (receiverAddress == null && discoveryRetryCount < MAX_RETRY_COUNT) {
                 try {
                     DatagramSocket().use { socket ->
                         socket.broadcast = true
@@ -275,16 +277,16 @@ class DataTransferManager(private val context: Context) {
                             }
                         } catch (e: Exception) {
                             // 超时或其他错误，继续重试
-                            retryCount++
-                            if (retryCount < MAX_RETRY_COUNT) {
-                                progress.onComplete(false, "正在重试寻找接收方 (${retryCount}/${MAX_RETRY_COUNT})...")
+                            discoveryRetryCount++
+                            if (discoveryRetryCount < MAX_RETRY_COUNT) {
+                                progress.onComplete(false, "正在重试寻找接收方 (${discoveryRetryCount}/${MAX_RETRY_COUNT})...")
                             }
                         }
                     }
                 } catch (e: Exception) {
-                    retryCount++
-                    if (retryCount < MAX_RETRY_COUNT) {
-                        progress.onComplete(false, "正在重试寻找接收方 (${retryCount}/${MAX_RETRY_COUNT})...")
+                    discoveryRetryCount++
+                    if (discoveryRetryCount < MAX_RETRY_COUNT) {
+                        progress.onComplete(false, "正在重试寻找接收方 (${discoveryRetryCount}/${MAX_RETRY_COUNT})...")
                     }
                 }
             }
@@ -294,31 +296,54 @@ class DataTransferManager(private val context: Context) {
                 return@withContext false
             }
 
-            // 连接到接收方
+            // 发现接收方后，等待一段时间再建立TCP连接
             progress.onComplete(false, "正在连接...")
-            Socket(receiverAddress, port).use { socket ->
-                progress.onComplete(false, "连接成功，开始发送...")
-                
-                socket.use { s ->
-                    val out = s.getOutputStream().buffered()
-                    // 首先发送文件大小
-                    val sizeBytes = tempFile.length().toString().toByteArray()
-                    out.write(sizeBytes.size)
-                    out.write(sizeBytes)
-                    
-                    // 发送文件内容
-                    tempFile.inputStream().use { input ->
-                        val buffer = ByteArray(BUFFER_SIZE)
-                        var bytes = input.read(buffer)
-                        while (bytes >= 0) {
-                            out.write(buffer, 0, bytes)
-                            bytes = input.read(buffer)
+            delay(TCP_CONNECT_DELAY)  // 给接收方一些时间准备ServerSocket
+
+            var connected = false
+            var connectRetryCount = 0
+            var lastError: Exception? = null
+
+            while (!connected && connectRetryCount < MAX_RETRY_COUNT) {
+                try {
+                    Socket(receiverAddress, port).use { socket ->
+                        connected = true
+                        progress.onComplete(false, "连接成功，开始发送...")
+                        
+                        socket.use { s ->
+                            val out = s.getOutputStream().buffered()
+                            // 首先发送文件大小
+                            val sizeBytes = tempFile.length().toString().toByteArray()
+                            out.write(sizeBytes.size)
+                            out.write(sizeBytes)
+                            
+                            // 发送文件内容
+                            tempFile.inputStream().use { input ->
+                                val buffer = ByteArray(BUFFER_SIZE)
+                                var bytes = input.read(buffer)
+                                while (bytes >= 0) {
+                                    out.write(buffer, 0, bytes)
+                                    bytes = input.read(buffer)
+                                }
+                            }
+                            out.flush()
                         }
                     }
-                    out.flush()
+                } catch (e: Exception) {
+                    lastError = e
+                    connectRetryCount++
+                    if (connectRetryCount < MAX_RETRY_COUNT) {
+                        progress.onComplete(false, "连接失败，正在重试 (${connectRetryCount}/${MAX_RETRY_COUNT})...")
+                        delay(1000) // 等待1秒后重试
+                    }
                 }
             }
-            
+
+            if (!connected) {
+                progress.onComplete(false, "连接失败: ${lastError?.message}")
+                return@withContext false
+            }
+
             // 清理临时文件
             tempFile.delete()
             progress.onComplete(true, "发送完成")
@@ -335,11 +360,15 @@ class DataTransferManager(private val context: Context) {
         port: Int = DEFAULT_PORT,
         progress: TransferProgress
     ) = withContext(Dispatchers.IO) {
+        var serverSocket: ServerSocket? = null
         try {
             progress.onProgress(0, 100)
             progress.onComplete(false, "等待连接...")
             
-            // 启动UDP监听，等待发送方发现
+            // 先创建ServerSocket
+            serverSocket = ServerSocket(port)
+
+            // 然后等待UDP发现
             var discoverySocket: DatagramSocket? = null
             try {
                 discoverySocket = DatagramSocket(null).apply {
@@ -367,7 +396,7 @@ class DataTransferManager(private val context: Context) {
                         repeat(3) {
                             try {
                                 discoverySocket.send(responsePacket)
-                                Thread.sleep(100)
+                                delay(100)
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
@@ -379,37 +408,35 @@ class DataTransferManager(private val context: Context) {
                 discoverySocket?.close()
             }
 
+            // 等待TCP连接
+            progress.onComplete(false, "发现发送方，等待连接...")
+            val socket = serverSocket.accept()
+            progress.onComplete(false, "连接成功，开始接收数据...")
+            
             // 创建临时文件
             val tempFile = File(context.cacheDir, "temp_received.zip")
             
-            // 等待TCP连接
-            ServerSocket(port).use { serverSocket ->
-                progress.onComplete(false, "发现发送方，等待连接...")
-                val socket = serverSocket.accept()
-                progress.onComplete(false, "连接成功，开始接收数据...")
+            socket.use { s ->
+                val input = s.getInputStream().buffered()
                 
-                socket.use { s ->
-                    val input = s.getInputStream().buffered()
-                    
-                    // 首先读取文件大小
-                    val sizeLength = input.read()
-                    val sizeBytes = ByteArray(sizeLength)
-                    input.read(sizeBytes)
-                    val totalSize = String(sizeBytes).toLong()
-                    
-                    var received = 0L
-                    
-                    // 接收文件内容
-                    tempFile.outputStream().buffered().use { output ->
-                        val buffer = ByteArray(BUFFER_SIZE)
-                        var bytes = input.read(buffer)
-                        while (bytes >= 0) {
-                            output.write(buffer, 0, bytes)
-                            received += bytes
-                            val progressPercent = ((received.toFloat() / totalSize) * 90).toInt()
-                            progress.onProgress(progressPercent, 100)
-                            bytes = input.read(buffer)
-                        }
+                // 首先读取文件大小
+                val sizeLength = input.read()
+                val sizeBytes = ByteArray(sizeLength)
+                input.read(sizeBytes)
+                val totalSize = String(sizeBytes).toLong()
+                
+                var received = 0L
+                
+                // 接收文件内容
+                tempFile.outputStream().buffered().use { output ->
+                    val buffer = ByteArray(BUFFER_SIZE)
+                    var bytes = input.read(buffer)
+                    while (bytes >= 0) {
+                        output.write(buffer, 0, bytes)
+                        received += bytes
+                        val progressPercent = ((received.toFloat() / totalSize) * 90).toInt()
+                        progress.onProgress(progressPercent, 100)
+                        bytes = input.read(buffer)
                     }
                 }
             }
@@ -425,6 +452,8 @@ class DataTransferManager(private val context: Context) {
             e.printStackTrace()
             progress.onComplete(false, "接收失败: ${e.message}")
             false
+        } finally {
+            serverSocket?.close()
         }
     }
 } 
