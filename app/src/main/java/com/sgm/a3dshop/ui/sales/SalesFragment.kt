@@ -192,7 +192,13 @@ class SalesFragment : Fragment(), MenuProvider {
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-        return false
+        return when (menuItem.itemId) {
+            R.id.action_sort -> {
+                viewModel.toggleSort()
+                true
+            }
+            else -> false
+        }
     }
 
     override fun onDestroyView() {

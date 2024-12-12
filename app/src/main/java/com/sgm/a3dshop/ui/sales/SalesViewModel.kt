@@ -17,6 +17,8 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
     private val _saleRecords = MutableStateFlow<List<SaleRecord>>(emptyList())
     val saleRecords: StateFlow<List<SaleRecord>> = _saleRecords.asStateFlow()
 
+    private var isAscending = true
+
     init {
         loadSaleRecords()
     }
@@ -24,8 +26,21 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadSaleRecords() {
         viewModelScope.launch {
             saleRecordDao.getAllSaleRecords().collect { records ->
-                _saleRecords.value = records
+                _saleRecords.value = if (isAscending) {
+                    records.sortedBy { it.salePrice }
+                } else {
+                    records.sortedByDescending { it.salePrice }
+                }
             }
+        }
+    }
+
+    fun toggleSort() {
+        isAscending = !isAscending
+        _saleRecords.value = if (isAscending) {
+            _saleRecords.value.sortedBy { it.salePrice }
+        } else {
+            _saleRecords.value.sortedByDescending { it.salePrice }
         }
     }
 
