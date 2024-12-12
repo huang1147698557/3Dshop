@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.*
 
 class ProfileViewModel(application: Application) : AndroidViewModel(application) {
@@ -55,6 +56,9 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
 
     fun deleteVoiceNote(voiceNote: VoiceNote) {
         viewModelScope.launch {
+            // 删除文件
+            File(voiceNote.filePath).delete()
+            // 删除数据库记录
             voiceNoteDao.deleteVoiceNote(voiceNote)
         }
     }
