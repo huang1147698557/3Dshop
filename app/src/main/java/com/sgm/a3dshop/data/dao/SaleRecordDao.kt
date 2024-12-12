@@ -26,4 +26,7 @@ interface SaleRecordDao {
 
     @Query("SELECT * FROM sale_records WHERE id = :saleRecordId")
     suspend fun getSaleRecordById(saleRecordId: Long): SaleRecord
+
+    @Query("SELECT * FROM sale_records ORDER BY createdAt DESC")
+    suspend fun getAllSaleRecordsSync(): List<SaleRecord>
 } 

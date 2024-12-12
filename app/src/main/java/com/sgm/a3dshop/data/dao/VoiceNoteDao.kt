@@ -26,4 +26,7 @@ interface VoiceNoteDao {
 
     @Query("SELECT * FROM voice_notes WHERE id = :voiceNoteId")
     suspend fun getVoiceNoteById(voiceNoteId: Int): VoiceNote?
+
+    @Query("SELECT * FROM voice_notes ORDER BY createdAt DESC")
+    suspend fun getAllVoiceNotesSync(): List<VoiceNote>
 } 

@@ -25,6 +25,9 @@ import com.sgm.a3dshop.utils.AudioUtils
 import com.sgm.a3dshop.utils.DataTransferManager
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import android.content.Intent
+import android.app.Activity
+import java.io.File
 
 class ProfileFragment : Fragment() {
     private var _binding: FragmentProfileBinding? = null
@@ -159,30 +162,60 @@ class ProfileFragment : Fragment() {
     }
 
     private fun exportData() {
-        try {
-            val success = dataTransferManager.exportData()
-            if (success) {
-                Toast.makeText(context, "数据导出成功", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(context, "数据导出失败", Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            try {
+                val (success, filePath) = dataTransferManager.exportToLocal()
+                if (success) {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("导出成功")
+                        .setMessage("数据已导出到：\n$filePath")
+                        .setPositiveButton("确定", null)
+                        .show()
+                } else {
+                    Toast.makeText(requireContext(), "数据导出失败", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "导出错误: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-        } catch (e: Exception) {
-            Toast.makeText(context, "导出错误: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun importData() {
-        try {
-            val success = dataTransferManager.importData()
-            if (success) {
-                Toast.makeText(context, "数据导入成功", Toast.LENGTH_SHORT).show()
-                // 刷新数据
-                viewModel.refreshData()
-            } else {
-                Toast.makeText(context, "数据导入失败", Toast.LENGTH_SHORT).show()
+        // 打开文件选择器
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "*/*"
+        }
+        startActivityForResult(Intent.createChooser(intent, "选择备份文件"), REQUEST_IMPORT_FILE)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_IMPORT_FILE && resultCode == Activity.RESULT_OK) {
+            data?.data?.let { uri ->
+                lifecycleScope.launch {
+                    try {
+                        // 将 URI 转换为临时文件
+                        val tempFile = File(requireContext().cacheDir, "temp_import.zip")
+                        requireContext().contentResolver.openInputStream(uri)?.use { input ->
+                            tempFile.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+
+                        val success = dataTransferManager.importFromLocal(tempFile)
+                        val message = if (success) "数据导入成功" else "数据导入失败"
+                        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                        
+                        // 删除临时文件
+                        tempFile.delete()
+                        
+                        // 刷新数据
+                        viewModel.refreshData()
+                    } catch (e: Exception) {
+                        Toast.makeText(requireContext(), "导入错误: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
-        } catch (e: Exception) {
-            Toast.makeText(context, "导入错误: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -213,5 +246,9 @@ class ProfileFragment : Fragment() {
         currentDialog = null
         AudioUtils.stopLoopPlay()
         _binding = null
+    }
+
+    companion object {
+        private const val REQUEST_IMPORT_FILE = 1001
     }
 } 

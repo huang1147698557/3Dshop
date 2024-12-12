@@ -26,4 +26,7 @@ interface ProductDao {
 
     @Query("SELECT * FROM products WHERE id = :productId")
     suspend fun getProductById(productId: Long): Product
+
+    @Query("SELECT * FROM products ORDER BY createdAt DESC")
+    suspend fun getAllProductsSync(): List<Product>
 } 
