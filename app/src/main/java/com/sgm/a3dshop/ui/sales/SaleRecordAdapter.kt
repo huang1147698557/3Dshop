@@ -5,6 +5,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.sgm.a3dshop.R
 import com.sgm.a3dshop.data.entity.SaleRecord
 import com.sgm.a3dshop.databinding.ItemSaleRecordBinding
 import java.text.SimpleDateFormat
@@ -47,6 +49,13 @@ class SaleRecordAdapter(
                 tvName.text = saleRecord.name
                 tvPrice.text = String.format("¥%.2f", saleRecord.salePrice)
                 tvTime.text = dateFormat.format(saleRecord.createdAt)
+                // 使用Glide加载图片
+                Glide.with(ivProduct)
+                    .load(saleRecord.imageUrl)
+                    .placeholder(R.drawable.placeholder_image)
+                    .error(R.drawable.error_image)
+                    .centerCrop()
+                    .into(ivProduct)
             }
         }
     }
