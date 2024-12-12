@@ -5,7 +5,6 @@ import androidx.lifecycle.*
 import com.sgm.a3dshop.data.AppDatabase
 import com.sgm.a3dshop.data.entity.SaleRecord
 import com.sgm.a3dshop.data.repository.SaleRecordRepository
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class SaleRecordDetailViewModel(
@@ -18,16 +17,15 @@ class SaleRecordDetailViewModel(
     val saleRecord: LiveData<SaleRecord> = _saleRecord
 
     init {
-        val database = AppDatabase.getDatabase(application)
+        val database = AppDatabase.getDatabase(getApplication())
         repository = SaleRecordRepository(database.saleRecordDao())
         loadSaleRecord()
     }
 
     private fun loadSaleRecord() {
         viewModelScope.launch {
-            repository.getSaleRecordById(saleRecordId).collectLatest { record ->
-                _saleRecord.postValue(record)
-            }
+            val record = repository.getSaleRecordById(saleRecordId)
+            _saleRecord.postValue(record)
         }
     }
 

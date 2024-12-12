@@ -14,7 +14,7 @@ class ProductDetailViewModel(
     private val productId: Long
 ) : AndroidViewModel(application) {
     
-    private val productDao = AppDatabase.getDatabase(application).productDao()
+    private val productDao = AppDatabase.getDatabase(getApplication()).productDao()
     private val _product = MutableLiveData<Product>()
     val product: LiveData<Product> = _product
 
@@ -27,4 +27,4 @@ class ProductDetailViewModel(
             _product.value = productDao.getProductById(productId)
         }
     }
-} 
+}

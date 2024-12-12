@@ -15,69 +15,64 @@ class VoiceNoteAdapter(
     private val onPlayClick: (VoiceNote) -> Unit,
     private val onPauseClick: (VoiceNote) -> Unit,
     private val onStopClick: (VoiceNote) -> Unit
-) : ListAdapter<VoiceNote, VoiceNoteAdapter.ViewHolder>(DiffCallback()) {
+) : ListAdapter<VoiceNote, VoiceNoteAdapter.VoiceNoteViewHolder>(VoiceNoteDiffCallback()) {
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VoiceNoteViewHolder {
         val binding = ItemVoiceNoteBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false
         )
-        return ViewHolder(binding)
+        return VoiceNoteViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position))
+    override fun onBindViewHolder(holder: VoiceNoteViewHolder, position: Int) {
+        val voiceNote = getItem(position)
+        holder.bind(voiceNote)
     }
 
-    inner class ViewHolder(
+    inner class VoiceNoteViewHolder(
         private val binding: ItemVoiceNoteBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(voiceNote: VoiceNote) {
             binding.apply {
-                tvTitle.text = voiceNote.title
-                tvNote.text = voiceNote.note
-                tvCreateTime.text = dateFormat.format(Date(voiceNote.createTime))
-                tvDuration.text = formatDuration(voiceNote.duration)
+                tvTitle.text = "语音备忘 ${dateFormat.format(voiceNote.createdAt)}"
+                
+                val isCurrentPlaying = AudioUtils.isPlaying() && 
+                    AudioUtils.getCurrentPlayingPath() == voiceNote.filePath
 
-                // 更新播放按钮状态
-                val isPlaying = AudioUtils.isPlaying() || AudioUtils.isLoopPlaying()
-                btnPlay.text = if (isPlaying) "暂停" else "播放"
+                btnPlay.text = when {
+                    isCurrentPlaying && !AudioUtils.isPaused() -> "暂停"
+                    isCurrentPlaying && AudioUtils.isPaused() -> "继续"
+                    else -> "播放"
+                }
+
+                btnLoop.text = if (voiceNote.isLoopEnabled) "停止循环" else "循环播放"
+                btnLoop.isEnabled = !isCurrentPlaying || voiceNote.isLoopEnabled
+
                 btnPlay.setOnClickListener {
-                    if (isPlaying) {
+                    if (isCurrentPlaying) {
                         onPauseClick(voiceNote)
                     } else {
                         onPlayClick(voiceNote)
                     }
                 }
 
-                // 停止按钮
-                btnStop.setOnClickListener {
-                    onStopClick(voiceNote)
-                }
-
-                // 循环播放开关
-                switchLoop.isChecked = voiceNote.isLoopEnabled
-                switchLoop.setOnCheckedChangeListener { _, isChecked ->
-                    voiceNote.isLoopEnabled = isChecked
-                    if (!isChecked && AudioUtils.isLoopPlaying()) {
+                btnLoop.setOnClickListener {
+                    if (voiceNote.isLoopEnabled) {
                         onStopClick(voiceNote)
+                    } else {
+                        onPlayClick(voiceNote.copy(isLoopEnabled = true))
                     }
                 }
             }
         }
-
-        private fun formatDuration(seconds: Int): String {
-            val minutes = seconds / 60
-            val remainingSeconds = seconds % 60
-            return String.format("%02d:%02d", minutes, remainingSeconds)
-        }
     }
 
-    private class DiffCallback : DiffUtil.ItemCallback<VoiceNote>() {
+    class VoiceNoteDiffCallback : DiffUtil.ItemCallback<VoiceNote>() {
         override fun areItemsTheSame(oldItem: VoiceNote, newItem: VoiceNote): Boolean {
             return oldItem.id == newItem.id
         }

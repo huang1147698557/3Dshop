@@ -16,6 +16,7 @@ object AudioUtils {
     private var mediaPlayer: MediaPlayer? = null
     private var isLoopPlaying = false
     private var isPaused = false
+    private var currentPlayingPath: String? = null
     private val handler = Handler(Looper.getMainLooper())
     private var loopRunnable: Runnable? = null
 
@@ -77,14 +78,17 @@ object AudioUtils {
             try {
                 setDataSource(filePath)
                 setOnCompletionListener {
+                    currentPlayingPath = null
                     onCompletion()
                 }
                 prepare()
                 start()
+                currentPlayingPath = filePath
                 isPaused = false
             } catch (e: IOException) {
                 Log.e(TAG, "prepare() failed", e)
                 release()
+                currentPlayingPath = null
             }
         }
     }
@@ -93,6 +97,7 @@ object AudioUtils {
         stopLoopPlay()
         isLoopPlaying = true
         isPaused = false
+        currentPlayingPath = filePath
         
         loopRunnable = object : Runnable {
             override fun run() {
@@ -154,10 +159,12 @@ object AudioUtils {
             release()
         }
         mediaPlayer = null
+        currentPlayingPath = null
         isPaused = false
     }
 
     fun isPlaying(): Boolean = mediaPlayer?.isPlaying == true
     fun isPaused(): Boolean = isPaused
     fun isLoopPlaying(): Boolean = isLoopPlaying
+    fun getCurrentPlayingPath(): String? = currentPlayingPath
 } 

@@ -2,8 +2,8 @@ package com.sgm.a3dshop.data.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
-import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.util.*
 
 @Entity(
     tableName = "sale_records",
@@ -12,19 +12,17 @@ import androidx.room.PrimaryKey
             entity = Product::class,
             parentColumns = ["id"],
             childColumns = ["productId"],
-            onDelete = ForeignKey.SET_NULL,
-            onUpdate = ForeignKey.CASCADE
+            onDelete = ForeignKey.SET_NULL
         )
-    ],
-    indices = [Index("productId")]
+    ]
 )
 data class SaleRecord(
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val productId: Long? = null,
+    val id: Int = 0,
+    val productId: Int? = null,
     val name: String,
     val salePrice: Double,
     val imageUrl: String? = null,
     val note: String? = null,
-    val createTime: Long = System.currentTimeMillis()
+    val createdAt: Date = Date()
 ) 

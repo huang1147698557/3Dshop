@@ -31,7 +31,7 @@ class SalesFragment : Fragment(), MenuProvider {
     }
 
     private val saleRecordAdapter = SaleRecordAdapter { saleRecord ->
-        val action = SalesFragmentDirections.actionSalesToSaleDetail(saleRecord.id)
+        val action = SalesFragmentDirections.actionSalesToSaleDetail(saleRecord.id.toLong())
         findNavController().navigate(action)
     }
 
@@ -181,7 +181,7 @@ class SalesFragment : Fragment(), MenuProvider {
 
     private fun observeData() {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.sortedSaleRecords.collectLatest { records ->
+            viewModel.saleRecords.collectLatest { records ->
                 saleRecordAdapter.submitList(records)
             }
         }
@@ -189,24 +189,10 @@ class SalesFragment : Fragment(), MenuProvider {
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.menu_sort, menu)
-        updateSortIcon(menu.findItem(R.id.action_sort))
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-        return when (menuItem.itemId) {
-            R.id.action_sort -> {
-                viewModel.toggleSortOrder()
-                updateSortIcon(menuItem)
-                true
-            }
-            else -> false
-        }
-    }
-
-    private fun updateSortIcon(menuItem: MenuItem) {
-        menuItem.icon?.let { drawable ->
-            drawable.level = if (viewModel.isDescendingOrder()) 0 else 10000
-        }
+        return false
     }
 
     override fun onDestroyView() {

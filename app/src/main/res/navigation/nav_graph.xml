@@ -49,9 +49,7 @@
 
     <fragment
         android:id="@+id/saleRecordDetailFragment"
-        android:name="com.sgm.a3dshop.ui.sales.SaleRecordDetailFragment"
-        android:label="销售记录详情"
-        tools:layout="@layout/fragment_sale_record_detail">
+        android:name="com.sgm.a3dshop.ui.sales.SaleRecordDetailFragment">
         <argument
             android:name="saleRecordId"
             app:argType="long" />

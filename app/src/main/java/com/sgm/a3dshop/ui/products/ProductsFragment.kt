@@ -29,7 +29,7 @@ class ProductsFragment : Fragment(), MenuProvider {
     }
 
     private val productAdapter = ProductAdapter { product ->
-        val action = ProductsFragmentDirections.actionProductsToDetail(product.id)
+        val action = ProductsFragmentDirections.actionProductsToDetail(product.id.toLong())
         findNavController().navigate(action)
     }
 
@@ -109,7 +109,7 @@ class ProductsFragment : Fragment(), MenuProvider {
 
     private fun observeData() {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.sortedProducts.collectLatest { products ->
+            viewModel.products.collectLatest { products ->
                 productAdapter.submitList(products)
             }
         }
@@ -117,24 +117,10 @@ class ProductsFragment : Fragment(), MenuProvider {
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.menu_sort, menu)
-        updateSortIcon(menu.findItem(R.id.action_sort))
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-        return when (menuItem.itemId) {
-            R.id.action_sort -> {
-                viewModel.toggleSortOrder()
-                updateSortIcon(menuItem)
-                true
-            }
-            else -> false
-        }
-    }
-
-    private fun updateSortIcon(menuItem: MenuItem) {
-        menuItem.icon?.let { drawable ->
-            drawable.level = if (viewModel.isDescendingOrder()) 0 else 10000
-        }
+        return false
     }
 
     override fun onDestroyView() {

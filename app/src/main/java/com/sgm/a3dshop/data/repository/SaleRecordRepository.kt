@@ -5,14 +5,10 @@ import com.sgm.a3dshop.data.entity.SaleRecord
 import kotlinx.coroutines.flow.Flow
 
 class SaleRecordRepository(private val saleRecordDao: SaleRecordDao) {
-    val allSaleRecords: Flow<List<SaleRecord>> = saleRecordDao.getAllSaleRecordsDesc()
+    val allSaleRecords: Flow<List<SaleRecord>> = saleRecordDao.getAllSaleRecords()
 
-    suspend fun insertSaleRecord(saleRecord: SaleRecord): Long {
-        return saleRecordDao.insertSaleRecord(saleRecord)
-    }
-
-    suspend fun insertSaleRecords(saleRecords: List<SaleRecord>) {
-        saleRecordDao.insertSaleRecords(saleRecords)
+    suspend fun insertSaleRecord(saleRecord: SaleRecord) {
+        saleRecordDao.insertSaleRecord(saleRecord)
     }
 
     suspend fun updateSaleRecord(saleRecord: SaleRecord) {
@@ -23,11 +19,11 @@ class SaleRecordRepository(private val saleRecordDao: SaleRecordDao) {
         saleRecordDao.deleteSaleRecord(saleRecord)
     }
 
-    fun getSaleRecordById(id: Long): Flow<SaleRecord> {
-        return saleRecordDao.getSaleRecordById(id)
+    suspend fun deleteAllSaleRecords() {
+        saleRecordDao.deleteAllSaleRecords()
     }
 
-    suspend fun getAllSaleRecordsSync(): List<SaleRecord> {
-        return saleRecordDao.getAllSaleRecordsSync()
+    suspend fun getSaleRecordById(saleRecordId: Long): SaleRecord {
+        return saleRecordDao.getSaleRecordById(saleRecordId)
     }
 } 

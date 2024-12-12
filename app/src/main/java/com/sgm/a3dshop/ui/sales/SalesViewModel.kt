@@ -5,33 +5,39 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sgm.a3dshop.data.AppDatabase
 import com.sgm.a3dshop.data.entity.SaleRecord
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class SalesViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
     private val saleRecordDao = database.saleRecordDao()
 
-    private val _sortOrder = MutableStateFlow(true) // true for descending
-    private val sortOrder = _sortOrder.asStateFlow()
+    private val _saleRecords = MutableStateFlow<List<SaleRecord>>(emptyList())
+    val saleRecords: StateFlow<List<SaleRecord>> = _saleRecords.asStateFlow()
 
-    val sortedSaleRecords: StateFlow<List<SaleRecord>> = sortOrder.flatMapLatest { isDescending ->
-        if (isDescending) {
-            saleRecordDao.getAllSaleRecordsDesc()
-        } else {
-            saleRecordDao.getAllSaleRecordsAsc()
+    init {
+        loadSaleRecords()
+    }
+
+    private fun loadSaleRecords() {
+        viewModelScope.launch {
+            saleRecordDao.getAllSaleRecords().collect { records ->
+                _saleRecords.value = records
+            }
         }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    }
 
     fun insertSaleRecord(saleRecord: SaleRecord) {
         viewModelScope.launch {
             saleRecordDao.insertSaleRecord(saleRecord)
+        }
+    }
+
+    fun updateSaleRecord(saleRecord: SaleRecord) {
+        viewModelScope.launch {
+            saleRecordDao.updateSaleRecord(saleRecord)
         }
     }
 
@@ -41,9 +47,9 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun toggleSortOrder() {
-        _sortOrder.value = !_sortOrder.value
+    fun deleteAllSaleRecords() {
+        viewModelScope.launch {
+            saleRecordDao.deleteAllSaleRecords()
+        }
     }
-
-    fun isDescendingOrder() = _sortOrder.value
 } 

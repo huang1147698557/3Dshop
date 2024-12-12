@@ -10,7 +10,6 @@ class SaleRecordDetailViewModelFactory(
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SaleRecordDetailViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
             return SaleRecordDetailViewModel(application, saleRecordId) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

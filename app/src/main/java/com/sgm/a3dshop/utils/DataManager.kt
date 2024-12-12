@@ -10,6 +10,7 @@ import com.sgm.a3dshop.data.entity.Product
 import com.sgm.a3dshop.data.entity.SaleRecord
 import com.sgm.a3dshop.data.entity.VoiceNote
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.*
 import java.text.SimpleDateFormat
@@ -38,9 +39,9 @@ object DataManager {
         val gson = Gson()
 
         // 获取所有数据
-        val products = db.productDao().getAllProductsSync()
-        val sales = db.saleRecordDao().getAllSaleRecordsSync()
-        val voiceNotes = db.voiceNoteDao().getAllVoiceNotesSync()
+        val products = db.productDao().getAllProducts().first()
+        val sales = db.saleRecordDao().getAllSaleRecords().first()
+        val voiceNotes = db.voiceNoteDao().getAllVoiceNotes().first()
 
         ZipOutputStream(BufferedOutputStream(FileOutputStream(exportFile))).use { zip ->
             // 导出商品数据
@@ -151,7 +152,7 @@ object DataManager {
             if (imagesDir.exists()) {
                 val targetImagesDir = File(
                     context.getExternalFilesDir(Environment.DIRECTORY_PICTURES),
-                    CameraUtils.IMAGES_FOLDER
+                    "images"
                 ).apply { mkdirs() }
                 imagesDir.listFiles()?.forEach { file ->
                     file.copyTo(File(targetImagesDir, file.name), overwrite = true)
