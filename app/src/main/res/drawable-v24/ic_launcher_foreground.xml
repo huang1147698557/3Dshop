@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.5"
+        android:scaleY="0.5"
+        android:translateX="27"
+        android:translateY="27">
+        <!-- 3D打印机主体 -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M80,20L28,20C24.7,20 22,22.7 22,26L22,82C22,85.3 24.7,88 28,88L80,88C83.3,88 86,85.3 86,82L86,26C86,22.7 83.3,20 80,20ZM80,82L28,82L28,38L80,38L80,82ZM80,32L28,32L28,26L80,26L80,32Z"/>
+
+        <!-- 打印头 -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M46,44L62,44L62,50L58,54L50,54L46,50Z"/>
+
+        <!-- 打印物体 -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M48,54L60,54L60,74L48,74Z"/>
+
+        <!-- 控制面板 -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M32,26L40,26L40,32L32,32Z"/>
+    </group>
+</vector>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_select_product"
+        android:title="从商品简介选择" />
+    <item
+        android:id="@+id/action_take_photo"
+        android:title="拍照记录" />
+    <item
+        android:id="@+id/action_direct_input"
+        android:title="直接记录" />
+</menu> 

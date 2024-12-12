@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/navigation_products">
+
+    <fragment
+        android:id="@+id/navigation_products"
+        android:name="com.sgm.a3dshop.ui.products.ProductsFragment"
+        android:label="商品简介"
+        tools:layout="@layout/fragment_products">
+        <action
+            android:id="@+id/action_products_to_detail"
+            app:destination="@id/navigation_product_detail" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_product_detail"
+        android:name="com.sgm.a3dshop.ui.products.ProductDetailFragment"
+        android:label="商品详情"
+        tools:layout="@layout/fragment_product_detail">
+        <argument
+            android:name="productId"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_sales"
+        android:name="com.sgm.a3dshop.ui.sales.SalesFragment"
+        android:label="销售记录"
+        tools:layout="@layout/fragment_sales">
+        <action
+            android:id="@+id/action_sales_to_product_select"
+            app:destination="@id/productSelectFragment" />
+        <action
+            android:id="@+id/action_sales_to_sale_detail"
+            app:destination="@id/saleRecordDetailFragment" />
+        <action
+            android:id="@+id/action_sales_to_camera"
+            app:destination="@id/saleRecordCameraFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/productSelectFragment"
+        android:name="com.sgm.a3dshop.ui.sales.ProductSelectFragment"
+        android:label="选择商品"
+        tools:layout="@layout/fragment_product_select" />
+
+    <fragment
+        android:id="@+id/saleRecordDetailFragment"
+        android:name="com.sgm.a3dshop.ui.sales.SaleRecordDetailFragment"
+        android:label="销售记录详情"
+        tools:layout="@layout/fragment_sale_record_detail">
+        <argument
+            android:name="saleRecordId"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/saleRecordCameraFragment"
+        android:name="com.sgm.a3dshop.ui.sales.SaleRecordCameraFragment"
+        android:label="拍照记录"
+        tools:layout="@layout/fragment_sale_record_camera" />
+
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.sgm.a3dshop.ui.profile.ProfileFragment"
+        android:label="我的"
+        tools:layout="@layout/fragment_profile" />
+
+</navigation>
