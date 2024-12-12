@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -23,10 +25,15 @@ import com.sgm.a3dshop.ui.common.VoiceRecordDialog
 import com.sgm.a3dshop.ui.common.PlaySettingsDialog
 import com.sgm.a3dshop.utils.AudioUtils
 import com.sgm.a3dshop.utils.DataTransferManager
+import com.sgm.a3dshop.utils.TransferProgress
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import android.content.Intent
 import android.app.Activity
+import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
+import com.sgm.a3dshop.R
 import java.io.File
 
 class ProfileFragment : Fragment() {
@@ -162,6 +169,19 @@ class ProfileFragment : Fragment() {
     }
 
     private fun exportData() {
+        val items = arrayOf("本地导出", "网络发送")
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("选择导出方式")
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> exportToLocal()
+                    1 -> startSending()
+                }
+            }
+            .show()
+    }
+
+    private fun exportToLocal() {
         lifecycleScope.launch {
             try {
                 val (success, filePath) = dataTransferManager.exportToLocal()
@@ -181,6 +201,19 @@ class ProfileFragment : Fragment() {
     }
 
     private fun importData() {
+        val items = arrayOf("本地导入", "网络接收")
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("选择导入方式")
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> importFromLocal()
+                    1 -> startReceiving()
+                }
+            }
+            .show()
+    }
+
+    private fun importFromLocal() {
         // 打开文件选择器
         val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
             type = "*/*"
@@ -209,7 +242,7 @@ class ProfileFragment : Fragment() {
                         // 删除临时文件
                         tempFile.delete()
                         
-                        // 刷新数据
+                        // 刷新���据
                         viewModel.refreshData()
                     } catch (e: Exception) {
                         Toast.makeText(requireContext(), "导入错误: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -239,6 +272,108 @@ class ProfileFragment : Fragment() {
                 voiceNoteAdapter.notifyItemChanged(position)
             }
             .show()
+    }
+
+    private fun startSending() {
+        val progressDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("发送数据")
+            .setView(layoutInflater.inflate(R.layout.dialog_progress, null))
+            .setCancelable(true)  // 允许取消
+            .create()
+
+        lifecycleScope.launch {
+            dataTransferManager.sendDataOverNetwork(
+                progress = object : TransferProgress {
+                    override fun onProgress(progress: Int, total: Int) {
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            progressDialog.findViewById<ProgressBar>(R.id.progressBar)?.progress = progress
+                            progressDialog.findViewById<TextView>(R.id.tvProgress)?.text = 
+                                "${progress}%"
+                        }
+                    }
+
+                    override fun onComplete(success: Boolean, message: String) {
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            when (message) {
+                                "准备数据..." -> {
+                                    progressDialog.show()
+                                    progressDialog.setTitle("准备数据")
+                                }
+                                "正在寻找接收方..." -> {
+                                    progressDialog.setTitle("正在寻找接收方")
+                                }
+                                "正在连接..." -> {
+                                    progressDialog.setTitle("正在连接")
+                                }
+                                "连接成功，开始发送..." -> {
+                                    progressDialog.setCancelable(false)  // 开始传输后不可取消
+                                    progressDialog.setTitle("发送数据")
+                                }
+                                else -> {
+                                    progressDialog.dismiss()
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
+                }
+            )
+        }
+    }
+
+    private fun startReceiving() {
+        // 创建等待连接对话框
+        val waitDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("等待连接")
+            .setMessage("正在建立连接...")
+            .setNegativeButton("取消") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .create()
+
+        // 创建接收进度对话框
+        val progressDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("接收数据")
+            .setView(layoutInflater.inflate(R.layout.dialog_progress, null))
+            .setCancelable(false)
+            .create()
+
+        lifecycleScope.launch {
+            waitDialog.show()
+            dataTransferManager.receiveDataOverNetwork(
+                progress = object : TransferProgress {
+                    override fun onProgress(progress: Int, total: Int) {
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            progressDialog.findViewById<ProgressBar>(R.id.progressBar)?.progress = progress
+                            progressDialog.findViewById<TextView>(R.id.tvProgress)?.text = 
+                                "${progress}%"
+                        }
+                    }
+
+                    override fun onComplete(success: Boolean, message: String) {
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            when (message) {
+                                "等待连接..." -> {
+                                    // 已经显示等待对话框，不需要操作
+                                }
+                                "连接成功，开始接收数据..." -> {
+                                    waitDialog.dismiss()
+                                    progressDialog.show()
+                                }
+                                else -> {
+                                    waitDialog.dismiss()
+                                    progressDialog.dismiss()
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    if (success) {
+                                        viewModel.refreshData()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            )
+        }
     }
 
     override fun onDestroyView() {

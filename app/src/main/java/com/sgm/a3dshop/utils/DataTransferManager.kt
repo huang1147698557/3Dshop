@@ -20,8 +20,22 @@ import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import java.net.DatagramSocket
+import java.net.DatagramPacket
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.NetworkInterface
 
 class DataTransferManager(private val context: Context) {
+    companion object {
+        const val DEFAULT_PORT = 8888
+        const val DISCOVERY_PORT = 8889
+        const val BUFFER_SIZE = 8192
+        const val DISCOVERY_MESSAGE = "3DSHOP_DISCOVERY"
+        const val DISCOVERY_TIMEOUT = 3000 // 3秒超时
+        const val MAX_RETRY_COUNT = 5 // 最大重试次数
+    }
+
     private val database = AppDatabase.getDatabase(context)
     private val dateFormats = listOf(
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()),
@@ -152,91 +166,265 @@ class DataTransferManager(private val context: Context) {
         }
     }
 
-    // 通过Socket发送数据
-    suspend fun sendDataOverNetwork(port: Int = 8888): Boolean = withContext(Dispatchers.IO) {
+    // 发送数据
+    suspend fun sendDataOverNetwork(
+        port: Int = DEFAULT_PORT,
+        progress: TransferProgress
+    ) = withContext(Dispatchers.IO) {
         try {
-            ServerSocket(port).use { serverSocket ->
-                val socket = serverSocket.accept()
-                sendData(socket)
-            }
-            true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
-    }
+            progress.onProgress(0, 100)
+            progress.onComplete(false, "准备数据...")
+            
+            // 准备数据
+            val appData = AppData(
+                products = database.productDao().getAllProductsSync(),
+                saleRecords = database.saleRecordDao().getAllSaleRecordsSync(),
+                voiceNotes = database.voiceNoteDao().getAllVoiceNotesSync()
+            )
 
-    // 通过Socket接收数据
-    suspend fun receiveDataOverNetwork(host: String, port: Int = 8888): Boolean = withContext(Dispatchers.IO) {
-        try {
-            Socket(host, port).use { socket ->
-                receiveData(socket)
-            }
-            true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
-    }
+            // 创建临时ZIP文件
+            val tempFile = File(context.cacheDir, "temp_transfer.zip")
+            var totalSize = 0L
+            
+            // 写入ZIP文件并计算总大小
+            ZipOutputStream(FileOutputStream(tempFile)).use { zip ->
+                // 写入JSON数据
+                zip.putNextEntry(ZipEntry("data.json"))
+                val jsonData = gson.toJson(appData).toByteArray()
+                zip.write(jsonData)
+                totalSize += jsonData.size
+                zip.closeEntry()
 
-    private suspend fun sendData(socket: Socket) {
-        val appData = AppData(
-            products = database.productDao().getAllProductsSync(),
-            saleRecords = database.saleRecordDao().getAllSaleRecordsSync(),
-            voiceNotes = database.voiceNoteDao().getAllVoiceNotesSync()
-        )
-
-        ZipOutputStream(socket.getOutputStream().buffered()).use { zip ->
-            // 写入数据JSON
-            zip.putNextEntry(ZipEntry("data.json"))
-            zip.write(gson.toJson(appData).toByteArray())
-            zip.closeEntry()
-
-            // 发送录音文件
-            appData.voiceNotes.forEach { voiceNote ->
-                val voiceFile = File(voiceNote.filePath)
-                if (voiceFile.exists()) {
-                    zip.putNextEntry(ZipEntry("voices/${voiceFile.name}"))
-                    voiceFile.inputStream().use { input ->
-                        input.copyTo(zip)
+                // 写入录音文件
+                appData.voiceNotes.forEach { voiceNote ->
+                    val voiceFile = File(voiceNote.filePath)
+                    if (voiceFile.exists()) {
+                        zip.putNextEntry(ZipEntry("voices/${voiceFile.name}"))
+                        voiceFile.inputStream().use { it.copyTo(zip) }
+                        totalSize += voiceFile.length()
+                        zip.closeEntry()
                     }
-                    zip.closeEntry()
                 }
             }
+
+            // 发送UDP广播寻找接收方
+            progress.onComplete(false, "正在寻找接收方...")
+            var receiverAddress: String? = null
+            var retryCount = 0
+            
+            while (receiverAddress == null && retryCount < MAX_RETRY_COUNT) {
+                try {
+                    DatagramSocket().use { socket ->
+                        socket.broadcast = true
+                        socket.soTimeout = DISCOVERY_TIMEOUT
+
+                        // 在所有网络接口上发送广播
+                        NetworkInterface.getNetworkInterfaces().toList().forEach { networkInterface ->
+                            if (networkInterface.isUp && !networkInterface.isLoopback) {
+                                networkInterface.interfaceAddresses.forEach { interfaceAddress ->
+                                    val broadcast = interfaceAddress.broadcast
+                                    if (broadcast != null) {
+                                        // 发送广播
+                                        val message = DISCOVERY_MESSAGE.toByteArray()
+                                        val packet = DatagramPacket(
+                                            message,
+                                            message.size,
+                                            broadcast,
+                                            DISCOVERY_PORT
+                                        )
+                                        try {
+                                            socket.send(packet)
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 也发送到特定广播地址
+                        val message = DISCOVERY_MESSAGE.toByteArray()
+                        val addresses = arrayOf(
+                            "255.255.255.255",
+                            "192.168.43.255",  // 常见的热点广播地址
+                            "192.168.1.255"    // 常见的路由器广播地址
+                        )
+                        
+                        addresses.forEach { address ->
+                            try {
+                                val packet = DatagramPacket(
+                                    message,
+                                    message.size,
+                                    InetAddress.getByName(address),
+                                    DISCOVERY_PORT
+                                )
+                                socket.send(packet)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+
+                        // 等待响应
+                        val buffer = ByteArray(1024)
+                        val receivePacket = DatagramPacket(buffer, buffer.size)
+                        try {
+                            socket.receive(receivePacket)
+                            val response = String(receivePacket.data, 0, receivePacket.length)
+                            if (response == "OK") {
+                                receiverAddress = receivePacket.address.hostAddress
+                            }
+                        } catch (e: Exception) {
+                            // 超时或其他错误，继续重试
+                            retryCount++
+                            if (retryCount < MAX_RETRY_COUNT) {
+                                progress.onComplete(false, "正在重试寻找接收方 (${retryCount}/${MAX_RETRY_COUNT})...")
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    retryCount++
+                    if (retryCount < MAX_RETRY_COUNT) {
+                        progress.onComplete(false, "正在重试寻找接收方 (${retryCount}/${MAX_RETRY_COUNT})...")
+                    }
+                }
+            }
+
+            if (receiverAddress == null) {
+                progress.onComplete(false, "未找到接收方，请确保接收方已准备就绪")
+                return@withContext false
+            }
+
+            // 连接到接收方
+            progress.onComplete(false, "正在连接...")
+            Socket(receiverAddress, port).use { socket ->
+                progress.onComplete(false, "连接成功，开始发送...")
+                
+                socket.use { s ->
+                    val out = s.getOutputStream().buffered()
+                    // 首先发送文件大小
+                    val sizeBytes = tempFile.length().toString().toByteArray()
+                    out.write(sizeBytes.size)
+                    out.write(sizeBytes)
+                    
+                    // 发送文件内容
+                    tempFile.inputStream().use { input ->
+                        val buffer = ByteArray(BUFFER_SIZE)
+                        var bytes = input.read(buffer)
+                        while (bytes >= 0) {
+                            out.write(buffer, 0, bytes)
+                            bytes = input.read(buffer)
+                        }
+                    }
+                    out.flush()
+                }
+            }
+            
+            // 清理临时文件
+            tempFile.delete()
+            progress.onComplete(true, "发送完成")
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            progress.onComplete(false, "发送失败: ${e.message}")
+            false
         }
     }
 
-    private suspend fun receiveData(socket: Socket) {
-        ZipInputStream(socket.getInputStream().buffered()).use { zip ->
-            var entry = zip.nextEntry
-            var dataJson: String? = null
-
-            while (entry != null) {
-                when {
-                    entry.name == "data.json" -> {
-                        dataJson = zip.bufferedReader().readText()
+    // 接收数据
+    suspend fun receiveDataOverNetwork(
+        port: Int = DEFAULT_PORT,
+        progress: TransferProgress
+    ) = withContext(Dispatchers.IO) {
+        try {
+            progress.onProgress(0, 100)
+            progress.onComplete(false, "等待连接...")
+            
+            // 启动UDP监听，等待发送方发现
+            var discoverySocket: DatagramSocket? = null
+            try {
+                discoverySocket = DatagramSocket(null).apply {
+                    reuseAddress = true
+                    broadcast = true
+                    bind(InetSocketAddress(DISCOVERY_PORT))
+                }
+                
+                while (true) {
+                    val buffer = ByteArray(1024)
+                    val packet = DatagramPacket(buffer, buffer.size)
+                    discoverySocket.receive(packet)
+                    
+                    val message = String(packet.data, 0, packet.length)
+                    if (message == DISCOVERY_MESSAGE) {
+                        // 发送响应
+                        val response = "OK".toByteArray()
+                        val responsePacket = DatagramPacket(
+                            response,
+                            response.size,
+                            packet.address,
+                            packet.port
+                        )
+                        // 多次发送响应以提高成功率
+                        repeat(3) {
+                            try {
+                                discoverySocket.send(responsePacket)
+                                Thread.sleep(100)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                        break
                     }
-                    entry.name.startsWith("voices/") -> {
-                        val voiceFile = File(context.cacheDir, entry.name.substringAfter("voices/"))
-                        voiceFile.outputStream().use { output ->
-                            zip.copyTo(output)
+                }
+            } finally {
+                discoverySocket?.close()
+            }
+
+            // 创建临时文件
+            val tempFile = File(context.cacheDir, "temp_received.zip")
+            
+            // 等待TCP连接
+            ServerSocket(port).use { serverSocket ->
+                progress.onComplete(false, "发现发送方，等待连接...")
+                val socket = serverSocket.accept()
+                progress.onComplete(false, "连接成功，开始接收数据...")
+                
+                socket.use { s ->
+                    val input = s.getInputStream().buffered()
+                    
+                    // 首先读取文件大小
+                    val sizeLength = input.read()
+                    val sizeBytes = ByteArray(sizeLength)
+                    input.read(sizeBytes)
+                    val totalSize = String(sizeBytes).toLong()
+                    
+                    var received = 0L
+                    
+                    // 接收文件内容
+                    tempFile.outputStream().buffered().use { output ->
+                        val buffer = ByteArray(BUFFER_SIZE)
+                        var bytes = input.read(buffer)
+                        while (bytes >= 0) {
+                            output.write(buffer, 0, bytes)
+                            received += bytes
+                            val progressPercent = ((received.toFloat() / totalSize) * 90).toInt()
+                            progress.onProgress(progressPercent, 100)
+                            bytes = input.read(buffer)
                         }
                     }
                 }
-                entry = zip.nextEntry
             }
 
-            // 导入数据
-            dataJson?.let { json ->
-                val appData = gson.fromJson(json, AppData::class.java)
-                database.productDao().deleteAllProducts()
-                database.saleRecordDao().deleteAllSaleRecords()
-                database.voiceNoteDao().deleteAllVoiceNotes()
-
-                database.productDao().insertProducts(appData.products)
-                database.saleRecordDao().insertSaleRecords(appData.saleRecords)
-                database.voiceNoteDao().insertVoiceNotes(appData.voiceNotes)
-            }
+            // 导入接收到的数据
+            progress.onProgress(90, 100)
+            val success = importFromLocal(tempFile)
+            tempFile.delete()
+            
+            progress.onComplete(success, if (success) "接收完成" else "导入失败")
+            success
+        } catch (e: Exception) {
+            e.printStackTrace()
+            progress.onComplete(false, "接收失败: ${e.message}")
+            false
         }
     }
 } 
