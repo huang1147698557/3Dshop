@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.sgm.a3dshop.R
 import com.sgm.a3dshop.databinding.FragmentProductsBinding
-import com.sgm.a3dshop.utils.CsvUtils
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
