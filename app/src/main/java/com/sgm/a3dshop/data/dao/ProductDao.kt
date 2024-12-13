@@ -9,6 +9,9 @@ interface ProductDao {
     @Query("SELECT * FROM products ORDER BY createdAt DESC")
     fun getAllProducts(): Flow<List<Product>>
 
+    @Query("SELECT * FROM products WHERE name LIKE :query ORDER BY createdAt DESC")
+    fun searchProducts(query: String): Flow<List<Product>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertProduct(product: Product)
 

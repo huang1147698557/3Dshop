@@ -8,17 +8,20 @@ import androidx.room.TypeConverters
 import com.sgm.a3dshop.data.dao.ProductDao
 import com.sgm.a3dshop.data.dao.SaleRecordDao
 import com.sgm.a3dshop.data.dao.VoiceNoteDao
+import com.sgm.a3dshop.data.dao.PendingProductDao
 import com.sgm.a3dshop.data.entity.Product
 import com.sgm.a3dshop.data.entity.SaleRecord
 import com.sgm.a3dshop.data.entity.VoiceNote
+import com.sgm.a3dshop.data.entity.PendingProduct
 
 @Database(
     entities = [
         Product::class,
         SaleRecord::class,
-        VoiceNote::class
+        VoiceNote::class,
+        PendingProduct::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -26,6 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun productDao(): ProductDao
     abstract fun saleRecordDao(): SaleRecordDao
     abstract fun voiceNoteDao(): VoiceNoteDao
+    abstract fun pendingProductDao(): PendingProductDao
 
     companion object {
         @Volatile
@@ -37,7 +41,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "app_database"
-                ).build()
+                )
+                .fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }

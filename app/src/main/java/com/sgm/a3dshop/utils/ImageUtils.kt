@@ -16,6 +16,13 @@ object ImageUtils {
     private const val COMPRESS_QUALITY = 80
     private const val MAX_IMAGE_DIMENSION = 1920
 
+    fun createImageFile(context: Context): File {
+        val timestamp = System.currentTimeMillis()
+        val filename = "IMG_$timestamp.jpg"
+        val storageDir = context.getExternalFilesDir(null)
+        return File(storageDir, filename)
+    }
+
     fun compressImage(context: Context, uri: Uri): String? {
         return try {
             val inputStream = context.contentResolver.openInputStream(uri)

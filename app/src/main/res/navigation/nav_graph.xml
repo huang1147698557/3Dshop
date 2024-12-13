@@ -67,4 +67,31 @@
         android:label="我的"
         tools:layout="@layout/fragment_profile" />
 
+    <fragment
+        android:id="@+id/navigation_pending"
+        android:name="com.sgm.a3dshop.ui.pending.PendingFragment"
+        android:label="待打印"
+        tools:layout="@layout/fragment_pending">
+        
+        <action
+            android:id="@+id/action_pending_to_camera"
+            app:destination="@id/pendingCameraFragment" />
+            
+        <action
+            android:id="@+id/action_pending_to_product_select"
+            app:destination="@id/productSelectForPendingFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/pendingCameraFragment"
+        android:name="com.sgm.a3dshop.ui.pending.PendingCameraFragment"
+        android:label="拍照"
+        tools:layout="@layout/fragment_pending_camera" />
+
+    <fragment
+        android:id="@+id/productSelectForPendingFragment"
+        android:name="com.sgm.a3dshop.ui.pending.ProductSelectForPendingFragment"
+        android:label="选择商品"
+        tools:layout="@layout/fragment_product_select" />
+
 </navigation>
