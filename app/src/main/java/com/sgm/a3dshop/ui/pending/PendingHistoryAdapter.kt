@@ -36,7 +36,6 @@ class PendingHistoryAdapter : ListAdapter<PendingHistory, PendingHistoryAdapter.
         fun bind(pendingHistory: PendingHistory) {
             binding.apply {
                 tvName.text = pendingHistory.name
-                tvPrice.text = String.format("¥%.2f", pendingHistory.salePrice)
                 tvTime.text = dateFormat.format(pendingHistory.deletedAt)
                 tvNote.text = pendingHistory.note ?: ""
 

@@ -47,7 +47,6 @@ class PendingAdapter(
         fun bind(pendingProduct: PendingProduct) {
             binding.apply {
                 tvName.text = pendingProduct.name
-                tvPrice.text = String.format("¥%.2f", pendingProduct.salePrice)
                 tvTime.text = dateFormat.format(pendingProduct.createdAt)
                 tvNote.text = pendingProduct.note ?: ""
 
