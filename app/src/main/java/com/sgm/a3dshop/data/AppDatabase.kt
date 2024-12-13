@@ -9,19 +9,22 @@ import com.sgm.a3dshop.data.dao.ProductDao
 import com.sgm.a3dshop.data.dao.SaleRecordDao
 import com.sgm.a3dshop.data.dao.VoiceNoteDao
 import com.sgm.a3dshop.data.dao.PendingProductDao
+import com.sgm.a3dshop.data.dao.PendingHistoryDao
 import com.sgm.a3dshop.data.entity.Product
 import com.sgm.a3dshop.data.entity.SaleRecord
 import com.sgm.a3dshop.data.entity.VoiceNote
 import com.sgm.a3dshop.data.entity.PendingProduct
+import com.sgm.a3dshop.data.entity.PendingHistory
 
 @Database(
     entities = [
         Product::class,
         SaleRecord::class,
         VoiceNote::class,
-        PendingProduct::class
+        PendingProduct::class,
+        PendingHistory::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -30,6 +33,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun saleRecordDao(): SaleRecordDao
     abstract fun voiceNoteDao(): VoiceNoteDao
     abstract fun pendingProductDao(): PendingProductDao
+    abstract fun pendingHistoryDao(): PendingHistoryDao
 
     companion object {
         @Volatile

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.sgm.a3dshop.data.AppDatabase
+import com.sgm.a3dshop.data.entity.PendingHistory
 import com.sgm.a3dshop.data.entity.PendingProduct
 import com.sgm.a3dshop.data.entity.Product
 import kotlinx.coroutines.flow.*
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 class PendingViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
     private val pendingProductDao = database.pendingProductDao()
+    private val pendingHistoryDao = database.pendingHistoryDao()
     private val productDao = database.productDao()
 
     private val _pendingProducts = MutableStateFlow<List<PendingProduct>>(emptyList())
@@ -63,6 +65,17 @@ class PendingViewModel(application: Application) : AndroidViewModel(application)
 
     fun deletePendingProduct(pendingProduct: PendingProduct) {
         viewModelScope.launch {
+            // 先保存到历史记录
+            val pendingHistory = PendingHistory(
+                name = pendingProduct.name,
+                salePrice = pendingProduct.salePrice,
+                imageUrl = pendingProduct.imageUrl,
+                note = pendingProduct.note,
+                createdAt = pendingProduct.createdAt
+            )
+            pendingHistoryDao.insert(pendingHistory)
+            
+            // 然后删除待打印记录
             pendingProductDao.delete(pendingProduct)
         }
     }
