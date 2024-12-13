@@ -16,14 +16,22 @@ object ImageUtils {
     private const val COMPRESS_QUALITY = 80
     private const val MAX_IMAGE_DIMENSION = 1920
 
-    fun createImageFile(context: Context): File {
+    // 定义不同模块的图片存储目录
+    private const val DIR_PENDING = "pending_images"
+    private const val DIR_IDEA = "idea_images"
+
+    fun createImageFile(context: Context, isIdea: Boolean = false): File {
         val timestamp = System.currentTimeMillis()
         val filename = "IMG_$timestamp.jpg"
-        val storageDir = context.getExternalFilesDir(null)
+        val storageDir = if (isIdea) {
+            File(context.getExternalFilesDir(null), DIR_IDEA).apply { mkdirs() }
+        } else {
+            File(context.getExternalFilesDir(null), DIR_PENDING).apply { mkdirs() }
+        }
         return File(storageDir, filename)
     }
 
-    fun compressImage(context: Context, uri: Uri): String? {
+    fun compressImage(context: Context, uri: Uri, isIdea: Boolean = false): String? {
         return try {
             val inputStream = context.contentResolver.openInputStream(uri)
             val options = BitmapFactory.Options().apply {
@@ -57,7 +65,7 @@ object ImageUtils {
             }
 
             // 保存压缩后的图片
-            val outputFile = createCompressedImageFile(context)
+            val outputFile = createCompressedImageFile(context, isIdea)
             FileOutputStream(outputFile).use { out ->
                 bitmap.compress(Bitmap.CompressFormat.JPEG, COMPRESS_QUALITY, out)
             }
@@ -99,10 +107,14 @@ object ImageUtils {
         return 0
     }
 
-    private fun createCompressedImageFile(context: Context): File {
+    private fun createCompressedImageFile(context: Context, isIdea: Boolean = false): File {
         val timestamp = System.currentTimeMillis()
         val filename = "COMPRESSED_$timestamp.jpg"
-        val storageDir = context.getExternalFilesDir(null)
+        val storageDir = if (isIdea) {
+            File(context.getExternalFilesDir(null), DIR_IDEA).apply { mkdirs() }
+        } else {
+            File(context.getExternalFilesDir(null), DIR_PENDING).apply { mkdirs() }
+        }
         return File(storageDir, filename)
     }
 } 

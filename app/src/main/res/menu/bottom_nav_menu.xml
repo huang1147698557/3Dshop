@@ -13,6 +13,10 @@
         android:icon="@drawable/ic_refresh"
         android:title="待打印" />
     <item
+        android:id="@+id/navigation_idea"
+        android:icon="@drawable/ic_idea"
+        android:title="创意" />
+    <item
         android:id="@+id/navigation_profile"
         android:icon="@drawable/ic_profile"
         android:title="我的" />

@@ -118,4 +118,39 @@
         android:label="历史记录"
         tools:layout="@layout/fragment_pending_history" />
 
+    <fragment
+        android:id="@+id/navigation_idea"
+        android:name="com.sgm.a3dshop.ui.idea.IdeaFragment"
+        android:label="创意">
+        <action
+            android:id="@+id/action_navigation_idea_to_idea_camera"
+            app:destination="@id/idea_camera_fragment" />
+        <action
+            android:id="@+id/action_navigation_idea_to_idea_history"
+            app:destination="@id/idea_history_fragment" />
+        <action
+            android:id="@+id/action_navigation_idea_to_idea_detail"
+            app:destination="@id/idea_detail_fragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/idea_camera_fragment"
+        android:name="com.sgm.a3dshop.ui.idea.IdeaCameraFragment"
+        android:label="拍照"
+        tools:layout="@layout/fragment_idea_camera" />
+
+    <fragment
+        android:id="@+id/idea_history_fragment"
+        android:name="com.sgm.a3dshop.ui.idea.IdeaHistoryFragment"
+        android:label="历史记录" />
+
+    <fragment
+        android:id="@+id/idea_detail_fragment"
+        android:name="com.sgm.a3dshop.ui.idea.IdeaDetailFragment"
+        android:label="创意详情">
+        <argument
+            android:name="ideaId"
+            app:argType="long" />
+    </fragment>
+
 </navigation>

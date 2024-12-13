@@ -5,16 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.sgm.a3dshop.data.dao.ProductDao
-import com.sgm.a3dshop.data.dao.SaleRecordDao
-import com.sgm.a3dshop.data.dao.VoiceNoteDao
-import com.sgm.a3dshop.data.dao.PendingProductDao
-import com.sgm.a3dshop.data.dao.PendingHistoryDao
-import com.sgm.a3dshop.data.entity.Product
-import com.sgm.a3dshop.data.entity.SaleRecord
-import com.sgm.a3dshop.data.entity.VoiceNote
-import com.sgm.a3dshop.data.entity.PendingProduct
-import com.sgm.a3dshop.data.entity.PendingHistory
+import com.sgm.a3dshop.data.dao.*
+import com.sgm.a3dshop.data.entity.*
 
 @Database(
     entities = [
@@ -22,9 +14,11 @@ import com.sgm.a3dshop.data.entity.PendingHistory
         SaleRecord::class,
         VoiceNote::class,
         PendingProduct::class,
-        PendingHistory::class
+        PendingHistory::class,
+        IdeaRecord::class,
+        IdeaHistory::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -34,6 +28,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun voiceNoteDao(): VoiceNoteDao
     abstract fun pendingProductDao(): PendingProductDao
     abstract fun pendingHistoryDao(): PendingHistoryDao
+    abstract fun ideaRecordDao(): IdeaRecordDao
+    abstract fun ideaHistoryDao(): IdeaHistoryDao
 
     companion object {
         @Volatile

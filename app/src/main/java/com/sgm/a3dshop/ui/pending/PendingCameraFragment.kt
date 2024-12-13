@@ -197,9 +197,9 @@ class PendingCameraFragment : Fragment() {
 
         lifecycleScope.launch {
             try {
-                val outputFile = CameraUtils.createImageFile(requireContext())
+                val outputFile = CameraUtils.createImageFile(requireContext(), isIdea = false)
                 val savedUri = CameraUtils.takePhoto(imageCapture, outputFile, requireContext())
-                val compressedImagePath = ImageUtils.compressImage(requireContext(), savedUri)
+                val compressedImagePath = ImageUtils.compressImage(requireContext(), savedUri, isIdea = false)
 
                 if (compressedImagePath != null) {
                     // 删除原始图片
@@ -224,7 +224,7 @@ class PendingCameraFragment : Fragment() {
     private fun handleSelectedImage(uri: Uri) {
         lifecycleScope.launch {
             try {
-                val compressedImagePath = ImageUtils.compressImage(requireContext(), uri)
+                val compressedImagePath = ImageUtils.compressImage(requireContext(), uri, isIdea = false)
                 if (compressedImagePath != null) {
                     currentPhotoPath = compressedImagePath
                     switchToPhotoMode()

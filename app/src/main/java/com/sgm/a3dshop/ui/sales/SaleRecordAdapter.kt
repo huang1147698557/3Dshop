@@ -54,7 +54,7 @@ class SaleRecordAdapter(
                     .load(saleRecord.imageUrl)
                     .placeholder(R.drawable.placeholder_image)
                     .error(R.drawable.error_image)
-                    .centerCrop()
+                    .fitCenter()
                     .into(ivProduct)
             }
         }

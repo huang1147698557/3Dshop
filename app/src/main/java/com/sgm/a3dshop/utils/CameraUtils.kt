@@ -2,65 +2,44 @@ package com.sgm.a3dshop.utils
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
+import java.util.concurrent.Executor
 
 object CameraUtils {
-    private const val TAG = "CameraUtils"
-    const val IMAGES_FOLDER = "3DShop_Images"
-    val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-
-    fun createImageFile(context: Context): File {
-        val timeStamp = dateFormat.format(Date())
-        val imageFileName = "ORIGINAL_${timeStamp}"
-        val storageDir = File(
-            context.getExternalFilesDir(null),
-            IMAGES_FOLDER
-        ).apply {
-            if (!exists()) {
-                mkdirs()
-            }
-        }
-
-        return File.createTempFile(
-            imageFileName,
-            ".jpg",
-            storageDir
-        )
+    suspend fun createImageFile(context: Context, isIdea: Boolean = false): File = withContext(Dispatchers.IO) {
+        ImageUtils.createImageFile(context, isIdea)
     }
 
     suspend fun takePhoto(
         imageCapture: ImageCapture,
-        outputFile: File,
+        photoFile: File,
         context: Context
-    ): Uri = suspendCoroutine { continuation ->
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(outputFile).build()
+    ): Uri = withContext(Dispatchers.IO) {
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+        val mainExecutor: Executor = ContextCompat.getMainExecutor(context)
 
-        imageCapture.takePicture(
-            outputOptions,
-            context.mainExecutor,
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    output.savedUri?.let { uri ->
-                        Log.d(TAG, "Photo capture succeeded: ${uri.path}")
-                        continuation.resume(uri)
-                    } ?: run {
-                        continuation.resumeWithException(Exception("Failed to get saved image URI"))
+        return@withContext suspendCancellableCoroutine { continuation ->
+            imageCapture.takePicture(
+                outputOptions,
+                mainExecutor,
+                object : ImageCapture.OnImageSavedCallback {
+                    override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                        val savedUri = output.savedUri ?: photoFile.toUri()
+                        continuation.resumeWith(Result.success(savedUri))
+                    }
+
+                    override fun onError(exc: ImageCaptureException) {
+                        continuation.resumeWith(Result.failure(exc))
                     }
                 }
-
-                override fun onError(exception: ImageCaptureException) {
-                    Log.e(TAG, "Photo capture failed: ${exception.message}", exception)
-                    continuation.resumeWithException(exception)
-                }
-            }
-        )
+            )
+        }
     }
 } 
