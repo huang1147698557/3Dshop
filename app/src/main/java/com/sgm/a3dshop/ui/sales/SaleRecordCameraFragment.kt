@@ -52,6 +52,10 @@ class SaleRecordCameraFragment : Fragment() {
         }
     }
 
+    private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { handleSelectedImage(it) }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -103,6 +107,10 @@ class SaleRecordCameraFragment : Fragment() {
                 }
             }
 
+            fabGallery.setOnClickListener {
+                pickImage.launch("image/*")
+            }
+
             btnSave.setOnClickListener {
                 saveSaleRecord()
             }
@@ -112,6 +120,26 @@ class SaleRecordCameraFragment : Fragment() {
             }
         }
         updateFabIcon()
+    }
+
+    private fun handleSelectedImage(uri: Uri) {
+        lifecycleScope.launch {
+            try {
+                val compressedImagePath = ImageUtils.compressImage(requireContext(), uri)
+                if (compressedImagePath != null) {
+                    currentPhotoPath = compressedImagePath
+                    switchToPhotoMode()
+                    Glide.with(this@SaleRecordCameraFragment)
+                        .load(File(compressedImagePath))
+                        .into(binding.ivPhoto)
+                } else {
+                    Toast.makeText(context, "图片处理失败", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Image processing failed", e)
+                Toast.makeText(context, "图片处理失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun switchToPreviewMode() {
