@@ -17,7 +17,7 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
     private val _products = MutableStateFlow<List<Product>>(emptyList())
     val products: StateFlow<List<Product>> = _products.asStateFlow()
 
-    private var isAscending = true
+    private var isAscending = false
 
     init {
         loadProducts()
@@ -27,9 +27,9 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             productDao.getAllProducts().collect { products ->
                 _products.value = if (isAscending) {
-                    products.sortedBy { it.price }
+                    products.sortedBy { it.createdAt }
                 } else {
-                    products.sortedByDescending { it.price }
+                    products.sortedByDescending { it.createdAt }
                 }
             }
         }
@@ -38,9 +38,9 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
     fun toggleSort() {
         isAscending = !isAscending
         _products.value = if (isAscending) {
-            _products.value.sortedBy { it.price }
+            _products.value.sortedBy { it.createdAt }
         } else {
-            _products.value.sortedByDescending { it.price }
+            _products.value.sortedByDescending { it.createdAt }
         }
     }
 
