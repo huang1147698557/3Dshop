@@ -1,3 +1,5 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
+    <dimen name="bottom_nav_text_size_selected">16sp</dimen>
+    <dimen name="bottom_nav_text_size_normal">12sp</dimen>
 </resources>
