@@ -32,7 +32,7 @@ class PendingViewModel(application: Application) : AndroidViewModel(application)
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    private var isAscending = true
+    private var isAscending = false
 
     init {
         loadPendingProducts()
