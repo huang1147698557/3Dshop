@@ -7,7 +7,9 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
+import com.bumptech.glide.Glide
 import com.sgm.a3dshop.databinding.FragmentSaleRecordDetailBinding
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -51,6 +53,22 @@ class SaleRecordDetailFragment : Fragment() {
                     etPrice.setText(String.format("¥%.2f", it.salePrice))
                     tvSaleTime.text = dateFormat.format(it.createdAt)
                     etNote.setText(it.note ?: "")
+                    
+                    // 加载商品图片
+                    it.imageUrl?.let { imageUrl ->
+                        val imageSource = if (imageUrl.startsWith("/")) {
+                            // 本地文件路径
+                            File(imageUrl)
+                        } else {
+                            // 网络URL或资源URL
+                            imageUrl
+                        }
+                        
+                        Glide.with(ivProduct)
+                            .load(imageSource)
+                            .centerCrop()
+                            .into(ivProduct)
+                    }
                 }
             }
         }
