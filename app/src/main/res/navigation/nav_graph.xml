@@ -80,6 +80,10 @@
         <action
             android:id="@+id/action_pending_to_product_select"
             app:destination="@id/productSelectForPendingFragment" />
+            
+        <action
+            android:id="@+id/action_pending_to_detail"
+            app:destination="@id/pendingDetailFragment" />
     </fragment>
 
     <fragment
@@ -93,5 +97,15 @@
         android:name="com.sgm.a3dshop.ui.pending.ProductSelectForPendingFragment"
         android:label="选择商品"
         tools:layout="@layout/fragment_product_select" />
+
+    <fragment
+        android:id="@+id/pendingDetailFragment"
+        android:name="com.sgm.a3dshop.ui.pending.PendingDetailFragment"
+        android:label="待打商品详情"
+        tools:layout="@layout/fragment_pending_detail">
+        <argument
+            android:name="pendingProductId"
+            app:argType="long" />
+    </fragment>
 
 </navigation>

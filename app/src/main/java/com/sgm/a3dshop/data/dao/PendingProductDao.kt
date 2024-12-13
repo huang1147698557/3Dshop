@@ -15,6 +15,9 @@ interface PendingProductDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(pendingProduct: PendingProduct)
 
+    @Update
+    suspend fun update(pendingProduct: PendingProduct)
+
     @Delete
     suspend fun delete(pendingProduct: PendingProduct)
 

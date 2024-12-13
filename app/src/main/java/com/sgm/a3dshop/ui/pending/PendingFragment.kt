@@ -31,8 +31,8 @@ class PendingFragment : Fragment(), MenuProvider {
     }
 
     private val pendingAdapter = PendingAdapter { pendingProduct ->
-        // TODO: 实现待打商品详情页面导航
-        Toast.makeText(context, "查看详情功能开发中", Toast.LENGTH_SHORT).show()
+        val action = PendingFragmentDirections.actionPendingToDetail(pendingProduct.id.toLong())
+        findNavController().navigate(action)
     }
 
     override fun onCreateView(
@@ -113,15 +113,24 @@ class PendingFragment : Fragment(), MenuProvider {
                 val position = viewHolder.adapterPosition
                 val pendingProduct = pendingAdapter.currentList[position]
                 
-                viewModel.deletePendingProduct(pendingProduct)
-                
-                Snackbar.make(
-                    binding.root,
-                    "已删除 ${pendingProduct.name}",
-                    Snackbar.LENGTH_LONG
-                ).setAction("撤销") {
-                    viewModel.insertPendingProduct(pendingProduct)
-                }.show()
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("确认删除")
+                    .setMessage("确定要删除这条记录吗？")
+                    .setPositiveButton("确定") { _, _ ->
+                        viewModel.deletePendingProduct(pendingProduct)
+                        Snackbar.make(
+                            binding.root,
+                            "已删除 ${pendingProduct.name}",
+                            Snackbar.LENGTH_LONG
+                        ).setAction("撤销") {
+                            viewModel.insertPendingProduct(pendingProduct)
+                        }.show()
+                    }
+                    .setNegativeButton("取消") { _, _ ->
+                        // 恢复列表项
+                        pendingAdapter.notifyItemChanged(position)
+                    }
+                    .show()
             }
         }
 
