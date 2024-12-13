@@ -1,13 +1,13 @@
 package com.sgm.a3dshop.ui.pending
 
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.sgm.a3dshop.R
 import com.sgm.a3dshop.databinding.FragmentPendingHistoryBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -40,19 +40,10 @@ class PendingHistoryFragment : Fragment() {
 
     private fun setupToolbar() {
         binding.toolbar.apply {
-            setNavigationIcon(R.drawable.ic_back)
+            title = "历史记录"
+            setNavigationIcon(android.R.drawable.ic_menu_revert)
             setNavigationOnClickListener {
-                findNavController().navigateUp()
-            }
-            inflateMenu(R.menu.menu_pending_history)
-            setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    R.id.action_clear -> {
-                        viewModel.clearHistory()
-                        true
-                    }
-                    else -> false
-                }
+                requireActivity().onBackPressed()
             }
         }
     }
@@ -66,9 +57,9 @@ class PendingHistoryFragment : Fragment() {
 
     private fun observeData() {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.historyItems.collectLatest { items ->
-                adapter.submitList(items)
-                binding.tvEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+            viewModel.historyItems.collectLatest { histories ->
+                adapter.submitList(histories)
+                binding.tvEmpty.visibility = if (histories.isEmpty()) View.VISIBLE else View.GONE
             }
         }
     }

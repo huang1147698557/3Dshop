@@ -54,6 +54,7 @@ class PendingFragment : Fragment() {
 
     private fun setupToolbar() {
         binding.toolbar.apply {
+            title = "待打印"
             inflateMenu(R.menu.menu_pending)
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
