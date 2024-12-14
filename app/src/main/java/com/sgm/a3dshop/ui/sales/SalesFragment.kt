@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.sgm.a3dshop.R
+import com.sgm.a3dshop.data.entity.SaleRecord
 import com.sgm.a3dshop.databinding.FragmentSalesBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -64,7 +66,21 @@ class SalesFragment : Fragment(), MenuProvider {
         setupToolbar()
         setupViews()
         observeData()
+        setupFragmentResultListener()
         requireActivity().addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
+    }
+
+    private fun setupFragmentResultListener() {
+        setFragmentResultListener("sale_record_key") { _, bundle ->
+            bundle.getParcelable<SaleRecord>("sale_record")?.let { saleRecord ->
+                viewModel.insertSaleRecord(saleRecord)
+                Snackbar.make(
+                    binding.root,
+                    "已添加 ${saleRecord.name}",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     private fun setupToolbar() {
