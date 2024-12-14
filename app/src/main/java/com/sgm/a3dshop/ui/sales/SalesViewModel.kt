@@ -7,7 +7,6 @@ import com.sgm.a3dshop.data.AppDatabase
 import com.sgm.a3dshop.data.entity.SaleRecord
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class SalesViewModel(application: Application) : AndroidViewModel(application) {
@@ -15,9 +14,9 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
     private val saleRecordDao = database.saleRecordDao()
 
     private val _saleRecords = MutableStateFlow<List<SaleRecord>>(emptyList())
-    val saleRecords: StateFlow<List<SaleRecord>> = _saleRecords.asStateFlow()
+    val saleRecords: StateFlow<List<SaleRecord>> = _saleRecords
 
-    private var isAscending = true
+    private var isAscending = false
 
     init {
         loadSaleRecords()
@@ -27,9 +26,9 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             saleRecordDao.getAllSaleRecords().collect { records ->
                 _saleRecords.value = if (isAscending) {
-                    records.sortedBy { it.salePrice }
+                    records.sortedBy { it.createdAt }
                 } else {
-                    records.sortedByDescending { it.salePrice }
+                    records.sortedByDescending { it.createdAt }
                 }
             }
         }
@@ -38,9 +37,9 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleSort() {
         isAscending = !isAscending
         _saleRecords.value = if (isAscending) {
-            _saleRecords.value.sortedBy { it.salePrice }
+            _saleRecords.value.sortedBy { it.createdAt }
         } else {
-            _saleRecords.value.sortedByDescending { it.salePrice }
+            _saleRecords.value.sortedByDescending { it.createdAt }
         }
     }
 
