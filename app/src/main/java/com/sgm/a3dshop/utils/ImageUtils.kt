@@ -20,17 +20,13 @@ object ImageUtils {
 
     // 定义不同模块的图片存储目录
     const val DIR_PENDING = "pending_images"
-    const val DIR_IDEA = "idea_images"
+    const val DIR_IDEAS = "idea_images"
     const val DIR_SALES = "sales_images"
 
     fun createImageFile(context: Context, type: String = DIR_SALES): File {
-        val timestamp = System.currentTimeMillis()
-        val filename = "IMG_$timestamp.jpg"
-        val storageDir = when (type) {
-            DIR_PENDING -> File(context.getExternalFilesDir(null), DIR_PENDING)
-            DIR_IDEA -> File(context.getExternalFilesDir(null), DIR_IDEA)
-            else -> File(context.getExternalFilesDir(null), DIR_SALES)
-        }.apply { mkdirs() }
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val filename = "IMG_${timestamp}.jpg"
+        val storageDir = File(context.getExternalFilesDir(null), type).apply { mkdirs() }
         return File(storageDir, filename)
     }
 

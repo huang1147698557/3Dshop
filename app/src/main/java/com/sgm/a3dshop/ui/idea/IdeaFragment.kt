@@ -1,26 +1,24 @@
 package com.sgm.a3dshop.ui.idea
 
-import android.app.AlertDialog
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import com.sgm.a3dshop.R
 import com.sgm.a3dshop.data.entity.IdeaRecord
 import com.sgm.a3dshop.databinding.DialogDirectIdeaBinding
 import com.sgm.a3dshop.databinding.FragmentIdeaBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.io.File
 import java.util.*
 
 class IdeaFragment : Fragment() {
@@ -32,8 +30,7 @@ class IdeaFragment : Fragment() {
     }
 
     private val adapter = IdeaAdapter { ideaRecord ->
-        val action = IdeaFragmentDirections
-            .actionNavigationIdeaToIdeaDetail(ideaRecord.id.toLong())
+        val action = IdeaFragmentDirections.actionNavigationIdeaToIdeaDetail(ideaRecord.id.toLong())
         findNavController().navigate(action)
     }
 
@@ -50,20 +47,20 @@ class IdeaFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupToolbar()
         setupRecyclerView()
-        setupFab()
+        setupViews()
+        setupSwipeToDelete()
+        setupFragmentResultListener()
         observeData()
-        setupNavBackStackEntry()
     }
 
     private fun setupToolbar() {
         binding.toolbar.apply {
+            title = "创意"
             inflateMenu(R.menu.menu_idea)
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.action_history -> {
-                        findNavController().navigate(
-                            IdeaFragmentDirections.actionNavigationIdeaToIdeaHistory()
-                        )
+                        findNavController().navigate(R.id.action_navigation_idea_to_idea_history)
                         true
                     }
                     else -> false
@@ -77,10 +74,12 @@ class IdeaFragment : Fragment() {
             layoutManager = LinearLayoutManager(context)
             adapter = this@IdeaFragment.adapter
         }
+    }
 
-        // 添加左右滑动删除功能
-        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+    private fun setupSwipeToDelete() {
+        val swipeHandler = object : ItemTouchHelper.SimpleCallback(
+            0,
+            ItemTouchHelper.RIGHT
         ) {
             override fun onMove(
                 recyclerView: RecyclerView,
@@ -92,29 +91,31 @@ class IdeaFragment : Fragment() {
                 val position = viewHolder.adapterPosition
                 val ideaRecord = adapter.currentList[position]
                 
-                // 显示确认对话框
-                AlertDialog.Builder(requireContext())
+                MaterialAlertDialogBuilder(requireContext())
                     .setTitle("确认删除")
                     .setMessage("确定要删除这条创意记录吗？")
                     .setPositiveButton("确定") { _, _ ->
                         viewModel.deleteIdeaRecord(ideaRecord)
-                        Toast.makeText(context, "已删除", Toast.LENGTH_SHORT).show()
+                        Snackbar.make(
+                            binding.root,
+                            "已删除 ${ideaRecord.name}",
+                            Snackbar.LENGTH_LONG
+                        ).setAction("撤销") {
+                            viewModel.insertIdeaRecord(ideaRecord)
+                        }.show()
                     }
                     .setNegativeButton("取消") { _, _ ->
-                        // 取消删除，恢复列表项
-                        adapter.notifyItemChanged(position)
-                    }
-                    .setOnCancelListener {
-                        // 对话框被取消时也恢复列表项
+                        // 恢复列表项
                         adapter.notifyItemChanged(position)
                     }
                     .show()
             }
-        })
-        itemTouchHelper.attachToRecyclerView(binding.recyclerIdea)
+        }
+
+        ItemTouchHelper(swipeHandler).attachToRecyclerView(binding.recyclerIdea)
     }
 
-    private fun setupFab() {
+    private fun setupViews() {
         binding.fabAdd.setOnClickListener {
             showAddOptionsDialog()
         }
@@ -122,13 +123,11 @@ class IdeaFragment : Fragment() {
 
     private fun showAddOptionsDialog() {
         val options = arrayOf("拍照记录", "直接创建")
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle("选择创建方式")
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> findNavController().navigate(
-                        IdeaFragmentDirections.actionNavigationIdeaToIdeaCamera()
-                    )
+                    0 -> findNavController().navigate(R.id.action_navigation_idea_to_idea_camera)
                     1 -> showDirectCreateDialog()
                 }
             }
@@ -137,7 +136,7 @@ class IdeaFragment : Fragment() {
 
     private fun showDirectCreateDialog() {
         val dialogBinding = DialogDirectIdeaBinding.inflate(layoutInflater)
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle("创建创意")
             .setView(dialogBinding.root)
             .setPositiveButton("确定") { _, _ ->
@@ -156,42 +155,24 @@ class IdeaFragment : Fragment() {
             .show()
     }
 
-    private fun observeData() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.ideaRecords.collectLatest { records ->
-                    adapter.submitList(records)
-                    binding.tvEmpty.visibility = if (records.isEmpty()) View.VISIBLE else View.GONE
-                }
+    private fun setupFragmentResultListener() {
+        setFragmentResultListener("idea_record_key") { _: String, bundle: Bundle ->
+            bundle.getParcelable<IdeaRecord>("idea_record")?.let { ideaRecord ->
+                viewModel.insertIdeaRecord(ideaRecord)
+                Snackbar.make(
+                    binding.root,
+                    "已添加 ${ideaRecord.name}",
+                    Snackbar.LENGTH_SHORT
+                ).show()
             }
         }
     }
 
-    private fun setupNavBackStackEntry() {
-        val navController = findNavController()
-        val navBackStackEntry = navController.getBackStackEntry(R.id.navigation_idea)
-        
-        navBackStackEntry.savedStateHandle.apply {
-            getLiveData<String>("idea_name").observe(viewLifecycleOwner) { name ->
-                if (name != null) {
-                    val note = get<String>("idea_note")
-                    val imagePath = get<String>("idea_image_path")
-                    
-                    if (imagePath != null) {
-                        val ideaRecord = IdeaRecord(
-                            name = name,
-                            note = note,
-                            imageUrl = imagePath,
-                            createdAt = Date()
-                        )
-                        viewModel.insertIdeaRecord(ideaRecord)
-                        
-                        // 清除已处理的数据
-                        remove<String>("idea_name")
-                        remove<String>("idea_note")
-                        remove<String>("idea_image_path")
-                    }
-                }
+    private fun observeData() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.ideaRecords.collectLatest { records ->
+                adapter.submitList(records)
+                binding.tvEmpty.visibility = if (records.isEmpty()) View.VISIBLE else View.GONE
             }
         }
     }

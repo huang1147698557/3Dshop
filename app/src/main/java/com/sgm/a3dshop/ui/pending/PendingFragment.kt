@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.*
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -49,6 +50,7 @@ class PendingFragment : Fragment() {
         setupRecyclerView()
         setupViews()
         setupSwipeToDelete()
+        setupFragmentResultListener()
         observeData()
     }
 
@@ -174,6 +176,19 @@ class PendingFragment : Fragment() {
             }
             .setNegativeButton("取消", null)
             .show()
+    }
+
+    private fun setupFragmentResultListener() {
+        setFragmentResultListener("pending_record_key") { _: String, bundle: Bundle ->
+            bundle.getParcelable<PendingProduct>("pending_record")?.let { pendingProduct ->
+                viewModel.insertPendingProduct(pendingProduct)
+                Snackbar.make(
+                    binding.root,
+                    "已添加 ${pendingProduct.name}",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     private fun observeData() {
