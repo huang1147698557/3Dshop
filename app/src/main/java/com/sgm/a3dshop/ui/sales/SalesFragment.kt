@@ -17,6 +17,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.sgm.a3dshop.R
 import com.sgm.a3dshop.data.entity.SaleRecord
 import com.sgm.a3dshop.databinding.FragmentSalesBinding
+import com.sgm.a3dshop.databinding.DialogDirectSaleBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -120,8 +121,49 @@ class SalesFragment : Fragment(), MenuProvider {
     }
 
     private fun showDirectSaleRecordDialog() {
-        // 暂时不实现直接记录功能
-        Toast.makeText(context, "暂不支持直接记录", Toast.LENGTH_SHORT).show()
+        val dialogBinding = DialogDirectSaleBinding.inflate(layoutInflater)
+        
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("直接记录")
+            .setView(dialogBinding.root)
+            .setPositiveButton("保存") { _, _ ->
+                val name = dialogBinding.etName.text?.toString()
+                val priceStr = dialogBinding.etPrice.text?.toString()
+                val note = dialogBinding.etNote.text?.toString()
+
+                if (name.isNullOrBlank()) {
+                    Toast.makeText(context, "请输入商品名称", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
+                val price = if (!priceStr.isNullOrBlank()) {
+                    try {
+                        priceStr.toDouble()
+                    } catch (e: NumberFormatException) {
+                        Toast.makeText(context, "价格格式无效", Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                } else {
+                    Toast.makeText(context, "请输入售价", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
+                val saleRecord = SaleRecord(
+                    name = name,
+                    salePrice = price,
+                    note = note,
+                    createdAt = Date()
+                )
+
+                viewModel.insertSaleRecord(saleRecord)
+                Snackbar.make(
+                    binding.root,
+                    "已添加 ${saleRecord.name}",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     private fun observeData() {
