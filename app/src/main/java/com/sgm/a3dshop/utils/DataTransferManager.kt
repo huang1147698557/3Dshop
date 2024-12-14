@@ -7,11 +7,10 @@ import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import com.sgm.a3dshop.data.AppDatabase
-import com.sgm.a3dshop.data.entity.Product
-import com.sgm.a3dshop.data.entity.SaleRecord
-import com.sgm.a3dshop.data.entity.VoiceNote
+import com.sgm.a3dshop.data.entity.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.*
 import java.net.ServerSocket
@@ -77,7 +76,11 @@ class DataTransferManager(private val context: Context) {
     data class AppData(
         val products: List<Product>,
         val saleRecords: List<SaleRecord>,
-        val voiceNotes: List<VoiceNote>
+        val voiceNotes: List<VoiceNote>,
+        val pendingProducts: List<PendingProduct>,
+        val pendingHistory: List<PendingHistory>,
+        val ideaRecords: List<IdeaRecord>,
+        val ideaHistory: List<IdeaHistory>
     )
 
     // 本地导出
@@ -86,7 +89,11 @@ class DataTransferManager(private val context: Context) {
             val appData = AppData(
                 products = database.productDao().getAllProductsSync(),
                 saleRecords = database.saleRecordDao().getAllSaleRecordsSync(),
-                voiceNotes = database.voiceNoteDao().getAllVoiceNotesSync()
+                voiceNotes = database.voiceNoteDao().getAllVoiceNotesSync(),
+                pendingProducts = database.pendingProductDao().getAllByCreatedAtDesc().first(),
+                pendingHistory = database.pendingHistoryDao().getAllByDeletedAtDesc().first(),
+                ideaRecords = database.ideaRecordDao().getAllByCreatedAtDesc().first(),
+                ideaHistory = database.ideaHistoryDao().getAllByDeletedAtDesc().first()
             )
 
             // 创建导出目录
@@ -112,6 +119,34 @@ class DataTransferManager(private val context: Context) {
                         zip.closeEntry()
                     }
                 }
+
+                // 复制待打印图片
+                appData.pendingProducts.forEach { pendingProduct ->
+                    pendingProduct.imageUrl?.let { imageUrl ->
+                        val imageFile = File(imageUrl)
+                        if (imageFile.exists()) {
+                            zip.putNextEntry(ZipEntry("pending_images/${imageFile.name}"))
+                            imageFile.inputStream().use { input ->
+                                input.copyTo(zip)
+                            }
+                            zip.closeEntry()
+                        }
+                    }
+                }
+
+                // 复制创意图片
+                appData.ideaRecords.forEach { ideaRecord ->
+                    ideaRecord.imageUrl?.let { imageUrl ->
+                        val imageFile = File(imageUrl)
+                        if (imageFile.exists()) {
+                            zip.putNextEntry(ZipEntry("idea_images/${imageFile.name}"))
+                            imageFile.inputStream().use { input ->
+                                input.copyTo(zip)
+                            }
+                            zip.closeEntry()
+                        }
+                    }
+                }
             }
             Pair(true, zipFile.absolutePath)
         } catch (e: Exception) {
@@ -134,8 +169,22 @@ class DataTransferManager(private val context: Context) {
                         }
                         entry.name.startsWith("voices/") -> {
                             val voiceFile = File(context.cacheDir, entry.name.substringAfter("voices/"))
-                            voiceFile.parentFile?.mkdirs()  // 确保目录存在
+                            voiceFile.parentFile?.mkdirs()
                             voiceFile.outputStream().use { output ->
+                                zip.copyTo(output)
+                            }
+                        }
+                        entry.name.startsWith("pending_images/") -> {
+                            val imageFile = File(context.cacheDir, entry.name.substringAfter("pending_images/"))
+                            imageFile.parentFile?.mkdirs()
+                            imageFile.outputStream().use { output ->
+                                zip.copyTo(output)
+                            }
+                        }
+                        entry.name.startsWith("idea_images/") -> {
+                            val imageFile = File(context.cacheDir, entry.name.substringAfter("idea_images/"))
+                            imageFile.parentFile?.mkdirs()
+                            imageFile.outputStream().use { output ->
                                 zip.copyTo(output)
                             }
                         }
@@ -147,13 +196,25 @@ class DataTransferManager(private val context: Context) {
                 dataJson?.let { json ->
                     try {
                         val appData = gson.fromJson(json, AppData::class.java)
+                        
+                        // 清空所有现有数据
                         database.productDao().deleteAllProducts()
                         database.saleRecordDao().deleteAllSaleRecords()
                         database.voiceNoteDao().deleteAllVoiceNotes()
+                        database.pendingProductDao().deleteAll()
+                        database.pendingHistoryDao().deleteAll()
+                        database.ideaRecordDao().deleteAll()
+                        database.ideaHistoryDao().deleteAll()
 
+                        // 导入新数据
                         database.productDao().insertProducts(appData.products)
                         database.saleRecordDao().insertSaleRecords(appData.saleRecords)
                         database.voiceNoteDao().insertVoiceNotes(appData.voiceNotes)
+                        appData.pendingProducts.forEach { database.pendingProductDao().insert(it) }
+                        appData.pendingHistory.forEach { database.pendingHistoryDao().insert(it) }
+                        appData.ideaRecords.forEach { database.ideaRecordDao().insert(it) }
+                        appData.ideaHistory.forEach { database.ideaHistoryDao().insert(it) }
+                        
                         return@withContext true
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -181,7 +242,11 @@ class DataTransferManager(private val context: Context) {
             val appData = AppData(
                 products = database.productDao().getAllProductsSync(),
                 saleRecords = database.saleRecordDao().getAllSaleRecordsSync(),
-                voiceNotes = database.voiceNoteDao().getAllVoiceNotesSync()
+                voiceNotes = database.voiceNoteDao().getAllVoiceNotesSync(),
+                pendingProducts = database.pendingProductDao().getAllByCreatedAtDesc().first(),
+                pendingHistory = database.pendingHistoryDao().getAllByDeletedAtDesc().first(),
+                ideaRecords = database.ideaRecordDao().getAllByCreatedAtDesc().first(),
+                ideaHistory = database.ideaHistoryDao().getAllByDeletedAtDesc().first()
             )
 
             // 创建临时ZIP文件
@@ -205,6 +270,32 @@ class DataTransferManager(private val context: Context) {
                         voiceFile.inputStream().use { it.copyTo(zip) }
                         totalSize += voiceFile.length()
                         zip.closeEntry()
+                    }
+                }
+
+                // 写入待打印图片
+                appData.pendingProducts.forEach { pendingProduct ->
+                    pendingProduct.imageUrl?.let { imageUrl ->
+                        val imageFile = File(imageUrl)
+                        if (imageFile.exists()) {
+                            zip.putNextEntry(ZipEntry("pending_images/${imageFile.name}"))
+                            imageFile.inputStream().use { it.copyTo(zip) }
+                            totalSize += imageFile.length()
+                            zip.closeEntry()
+                        }
+                    }
+                }
+
+                // 写入创意图片
+                appData.ideaRecords.forEach { ideaRecord ->
+                    ideaRecord.imageUrl?.let { imageUrl ->
+                        val imageFile = File(imageUrl)
+                        if (imageFile.exists()) {
+                            zip.putNextEntry(ZipEntry("idea_images/${imageFile.name}"))
+                            imageFile.inputStream().use { it.copyTo(zip) }
+                            totalSize += imageFile.length()
+                            zip.closeEntry()
+                        }
                     }
                 }
             }
@@ -241,28 +332,6 @@ class DataTransferManager(private val context: Context) {
                                         }
                                     }
                                 }
-                            }
-                        }
-
-                        // 也发送到特定广播地址
-                        val message = DISCOVERY_MESSAGE.toByteArray()
-                        val addresses = arrayOf(
-                            "255.255.255.255",
-                            "192.168.43.255",  // 常见的热点广播地址
-                            "192.168.1.255"    // 常见的路由器广播地址
-                        )
-                        
-                        addresses.forEach { address ->
-                            try {
-                                val packet = DatagramPacket(
-                                    message,
-                                    message.size,
-                                    InetAddress.getByName(address),
-                                    DISCOVERY_PORT
-                                )
-                                socket.send(packet)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
                             }
                         }
 
@@ -321,8 +390,12 @@ class DataTransferManager(private val context: Context) {
                             tempFile.inputStream().use { input ->
                                 val buffer = ByteArray(BUFFER_SIZE)
                                 var bytes = input.read(buffer)
+                                var sent = 0L
                                 while (bytes >= 0) {
                                     out.write(buffer, 0, bytes)
+                                    sent += bytes
+                                    val progressPercent = ((sent.toFloat() / totalSize) * 90).toInt()
+                                    progress.onProgress(progressPercent, 100)
                                     bytes = input.read(buffer)
                                 }
                             }
@@ -368,21 +441,16 @@ class DataTransferManager(private val context: Context) {
             // 先创建ServerSocket
             serverSocket = ServerSocket(port)
 
-            // 然后等待UDP发现
-            var discoverySocket: DatagramSocket? = null
-            try {
-                discoverySocket = DatagramSocket(null).apply {
-                    reuseAddress = true
-                    broadcast = true
-                    bind(InetSocketAddress(DISCOVERY_PORT))
-                }
+            // 创建UDP socket监听发现请求
+            DatagramSocket(DISCOVERY_PORT).use { udpSocket ->
+                val buffer = ByteArray(1024)
+                val packet = DatagramPacket(buffer, buffer.size)
                 
-                while (true) {
-                    val buffer = ByteArray(1024)
-                    val packet = DatagramPacket(buffer, buffer.size)
-                    discoverySocket.receive(packet)
-                    
+                try {
+                    // 等待发现请求
+                    udpSocket.receive(packet)
                     val message = String(packet.data, 0, packet.length)
+                    
                     if (message == DISCOVERY_MESSAGE) {
                         // 发送响应
                         val response = "OK".toByteArray()
@@ -392,20 +460,11 @@ class DataTransferManager(private val context: Context) {
                             packet.address,
                             packet.port
                         )
-                        // 多次发送响应以提高成功率
-                        repeat(3) {
-                            try {
-                                discoverySocket.send(responsePacket)
-                                delay(100)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
-                        break
+                        udpSocket.send(responsePacket)
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-            } finally {
-                discoverySocket?.close()
             }
 
             // 等待TCP连接
