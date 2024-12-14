@@ -152,16 +152,15 @@ class PendingFragment : Fragment() {
                     return@setPositiveButton
                 }
 
-                if (priceStr.isNullOrBlank()) {
-                    Toast.makeText(context, "请输入价格", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-
-                val price = try {
-                    priceStr.toDouble()
-                } catch (e: NumberFormatException) {
-                    Toast.makeText(context, "请输入有效的价格", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
+                val price = if (!priceStr.isNullOrBlank()) {
+                    try {
+                        priceStr.toDouble()
+                    } catch (e: NumberFormatException) {
+                        Toast.makeText(context, "价格格式无效", Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                } else {
+                    0.0
                 }
 
                 val pendingProduct = PendingProduct(

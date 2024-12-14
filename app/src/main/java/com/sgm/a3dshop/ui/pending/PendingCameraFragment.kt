@@ -251,21 +251,20 @@ class PendingCameraFragment : Fragment() {
             return
         }
 
-        if (priceStr.isNullOrBlank()) {
-            binding.etPrice.error = "请输入价格"
-            return
-        }
-
         if (currentPhotoPath == null) {
             Toast.makeText(context, "请先拍照", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val price = try {
-            priceStr.toDouble()
-        } catch (e: NumberFormatException) {
-            binding.etPrice.error = "请输入有效的价格"
-            return
+        val price = if (!priceStr.isNullOrBlank()) {
+            try {
+                priceStr.toDouble()
+            } catch (e: NumberFormatException) {
+                binding.etPrice.error = "价格格式无效"
+                return
+            }
+        } else {
+            0.0
         }
 
         val pendingProduct = PendingProduct(

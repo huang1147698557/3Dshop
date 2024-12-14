@@ -59,16 +59,15 @@ class PendingDetailFragment : Fragment() {
             return
         }
 
-        if (priceStr.isNullOrBlank()) {
-            binding.etPrice.error = "请输入价格"
-            return
-        }
-
-        val price = try {
-            priceStr.toDouble()
-        } catch (e: NumberFormatException) {
-            binding.etPrice.error = "请输入有效的价格"
-            return
+        val price = if (!priceStr.isNullOrBlank()) {
+            try {
+                priceStr.toDouble()
+            } catch (e: NumberFormatException) {
+                binding.etPrice.error = "价格格式无效"
+                return
+            }
+        } else {
+            0.0
         }
 
         viewModel.pendingProduct.value?.let { currentProduct ->
