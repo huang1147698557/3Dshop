@@ -2,6 +2,8 @@ package com.sgm.a3dshop.ui.sales
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.sgm.a3dshop.data.AppDatabase
 import com.sgm.a3dshop.data.entity.SaleRecord
@@ -17,6 +19,9 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _dailySales = MutableStateFlow<List<DailySales>>(emptyList())
     val dailySales: StateFlow<List<DailySales>> = _dailySales
+
+    private val _totalSales = MutableLiveData<Double>()
+    val totalSales: LiveData<Double> = _totalSales
 
     init {
         loadSaleRecords()
@@ -44,6 +49,9 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
                 }.sortedByDescending { it.date } // 按日期倒序排序
 
                 _dailySales.value = groupedRecords
+
+                // 计算总销售额
+                _totalSales.value = records.sumOf { it.salePrice }
             }
         }
     }

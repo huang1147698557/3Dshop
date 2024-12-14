@@ -16,6 +16,8 @@ import com.sgm.a3dshop.R
 import com.sgm.a3dshop.databinding.FragmentSalesBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
+import java.util.*
 
 class SalesFragment : Fragment(), MenuProvider {
     private var _binding: FragmentSalesBinding? = null
@@ -93,6 +95,12 @@ class SalesFragment : Fragment(), MenuProvider {
             viewModel.dailySales.collectLatest { dailySales ->
                 adapter.submitList(dailySales)
             }
+        }
+
+        // 观察总销售额
+        viewModel.totalSales.observe(viewLifecycleOwner) { total ->
+            val formattedTotal = NumberFormat.getCurrencyInstance(Locale.CHINA).format(total)
+            binding.tvTotalSales.text = formattedTotal
         }
     }
 
