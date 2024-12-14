@@ -4,8 +4,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.bumptech.glide.Glide
 import com.sgm.a3dshop.databinding.FragmentSaleRecordDetailBinding
@@ -41,8 +43,37 @@ class SaleRecordDetailFragment : Fragment() {
 
     private fun setupViews() {
         binding.apply {
-            // 设置视图的初始状态
+            btnSave.setOnClickListener {
+                saveSaleRecord()
+            }
         }
+    }
+
+    private fun saveSaleRecord() {
+        val name = binding.etName.text?.toString()
+        val priceStr = binding.etPrice.text?.toString()?.replace("¥", "")
+        val note = binding.etNote.text?.toString()
+
+        if (name.isNullOrBlank()) {
+            binding.etName.error = "请输入商品名称"
+            return
+        }
+
+        if (priceStr.isNullOrBlank()) {
+            binding.etPrice.error = "请输入售价"
+            return
+        }
+
+        val price = try {
+            priceStr.toDouble()
+        } catch (e: NumberFormatException) {
+            binding.etPrice.error = "请输入有效的价格"
+            return
+        }
+
+        viewModel.updateSaleRecord(name, price, note)
+        Toast.makeText(context, "保存成功", Toast.LENGTH_SHORT).show()
+        findNavController().navigateUp()
     }
 
     private fun observeData() {
