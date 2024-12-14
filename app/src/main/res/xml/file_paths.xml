@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <external-files-path
-        name="images"
-        path="Pictures/3DShop" />
+        name="sales_images"
+        path="sales_images" />
+    <external-files-path
+        name="pending_images"
+        path="pending_images" />
+    <external-files-path
+        name="idea_images"
+        path="idea_images" />
     <external-files-path
         name="camera_photos"
-        path="." />
-    <external-path
-        name="external_files"
         path="." />
 </paths> 

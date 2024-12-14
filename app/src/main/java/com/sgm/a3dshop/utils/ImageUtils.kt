@@ -10,6 +10,8 @@ import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
 
 object ImageUtils {
     private const val TAG = "ImageUtils"
@@ -17,21 +19,22 @@ object ImageUtils {
     private const val MAX_IMAGE_DIMENSION = 1920
 
     // 定义不同模块的图片存储目录
-    private const val DIR_PENDING = "pending_images"
-    private const val DIR_IDEA = "idea_images"
+    const val DIR_PENDING = "pending_images"
+    const val DIR_IDEA = "idea_images"
+    const val DIR_SALES = "sales_images"
 
-    fun createImageFile(context: Context, isIdea: Boolean = false): File {
+    fun createImageFile(context: Context, type: String = DIR_SALES): File {
         val timestamp = System.currentTimeMillis()
         val filename = "IMG_$timestamp.jpg"
-        val storageDir = if (isIdea) {
-            File(context.getExternalFilesDir(null), DIR_IDEA).apply { mkdirs() }
-        } else {
-            File(context.getExternalFilesDir(null), DIR_PENDING).apply { mkdirs() }
-        }
+        val storageDir = when (type) {
+            DIR_PENDING -> File(context.getExternalFilesDir(null), DIR_PENDING)
+            DIR_IDEA -> File(context.getExternalFilesDir(null), DIR_IDEA)
+            else -> File(context.getExternalFilesDir(null), DIR_SALES)
+        }.apply { mkdirs() }
         return File(storageDir, filename)
     }
 
-    fun compressImage(context: Context, uri: Uri, isIdea: Boolean = false): String? {
+    fun compressImage(context: Context, uri: Uri, type: String = DIR_SALES): String? {
         return try {
             val inputStream = context.contentResolver.openInputStream(uri)
             val options = BitmapFactory.Options().apply {
@@ -65,7 +68,7 @@ object ImageUtils {
             }
 
             // 保存压缩后的图片
-            val outputFile = createCompressedImageFile(context, isIdea)
+            val outputFile = createImageFile(context, type)
             FileOutputStream(outputFile).use { out ->
                 bitmap.compress(Bitmap.CompressFormat.JPEG, COMPRESS_QUALITY, out)
             }
@@ -107,14 +110,7 @@ object ImageUtils {
         return 0
     }
 
-    private fun createCompressedImageFile(context: Context, isIdea: Boolean = false): File {
-        val timestamp = System.currentTimeMillis()
-        val filename = "COMPRESSED_$timestamp.jpg"
-        val storageDir = if (isIdea) {
-            File(context.getExternalFilesDir(null), DIR_IDEA).apply { mkdirs() }
-        } else {
-            File(context.getExternalFilesDir(null), DIR_PENDING).apply { mkdirs() }
-        }
-        return File(storageDir, filename)
+    fun saveImageFromUri(context: Context, uri: Uri, type: String = DIR_SALES): String? {
+        return compressImage(context, uri, type)
     }
 } 
