@@ -9,14 +9,15 @@ import com.bumptech.glide.Glide
 import com.sgm.a3dshop.R
 import com.sgm.a3dshop.data.entity.SaleRecord
 import com.sgm.a3dshop.databinding.ItemSaleRecordBinding
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
 class SaleRecordAdapter(
-    private val onItemClick: (SaleRecord) -> Unit
+    private val onItemClick: (Long) -> Unit
 ) : ListAdapter<SaleRecord, SaleRecordAdapter.ViewHolder>(DiffCallback()) {
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemSaleRecordBinding.inflate(
@@ -39,7 +40,7 @@ class SaleRecordAdapter(
             binding.root.setOnClickListener {
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
-                    onItemClick(getItem(position))
+                    onItemClick(getItem(position).id.toLong())
                 }
             }
         }
@@ -48,14 +49,23 @@ class SaleRecordAdapter(
             binding.apply {
                 tvName.text = saleRecord.name
                 tvPrice.text = String.format("¥%.2f", saleRecord.salePrice)
-                tvTime.text = dateFormat.format(saleRecord.createdAt)
-                // 使用Glide加载图片
-                Glide.with(ivProduct)
-                    .load(saleRecord.imageUrl)
-                    .placeholder(R.drawable.placeholder_image)
-                    .error(R.drawable.error_image)
-                    .fitCenter()
-                    .into(ivProduct)
+                tvTime.text = timeFormat.format(saleRecord.createdAt)
+
+                // 加载商品图片
+                saleRecord.imageUrl?.let { imageUrl ->
+                    val imageSource = if (imageUrl.startsWith("/")) {
+                        File(imageUrl)
+                    } else {
+                        imageUrl
+                    }
+                    
+                    Glide.with(ivProduct)
+                        .load(imageSource)
+                        .placeholder(R.drawable.placeholder_image)
+                        .error(R.drawable.error_image)
+                        .centerCrop()
+                        .into(ivProduct)
+                }
             }
         }
     }

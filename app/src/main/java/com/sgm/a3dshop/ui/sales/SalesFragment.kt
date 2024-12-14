@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import com.sgm.a3dshop.R
 import com.sgm.a3dshop.databinding.FragmentSalesBinding
 import kotlinx.coroutines.flow.collectLatest
@@ -27,10 +28,7 @@ class SalesFragment : Fragment(), MenuProvider {
         SalesViewModelFactory(requireActivity().application)
     }
 
-    private val adapter = DailySalesAdapter { recordId ->
-        val action = SalesFragmentDirections.actionSalesToSaleDetail(recordId)
-        findNavController().navigate(action)
-    }
+    private lateinit var adapter: DailySalesAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,7 +36,27 @@ class SalesFragment : Fragment(), MenuProvider {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentSalesBinding.inflate(inflater, container, false)
+        setupAdapter()
         return binding.root
+    }
+
+    private fun setupAdapter() {
+        adapter = DailySalesAdapter(
+            onItemClick = { recordId ->
+                val action = SalesFragmentDirections.actionSalesToSaleDetail(recordId)
+                findNavController().navigate(action)
+            },
+            onDeleteClick = { saleRecord ->
+                viewModel.deleteSaleRecord(saleRecord)
+                Snackbar.make(
+                    binding.root,
+                    "已删除 ${saleRecord.name}",
+                    Snackbar.LENGTH_LONG
+                ).setAction("撤销") {
+                    viewModel.insertSaleRecord(saleRecord)
+                }.show()
+            }
+        )
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
