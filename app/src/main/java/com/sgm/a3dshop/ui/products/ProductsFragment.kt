@@ -18,6 +18,8 @@ import com.sgm.a3dshop.R
 import com.sgm.a3dshop.databinding.FragmentProductsBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 class ProductsFragment : Fragment(), MenuProvider {
     private var _binding: FragmentProductsBinding? = null
@@ -34,6 +36,10 @@ class ProductsFragment : Fragment(), MenuProvider {
 
     private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { handleCsvFile(it) }
+    }
+
+    private val createDocument = registerForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+        uri?.let { exportCsv(it) }
     }
 
     override fun onCreateView(
@@ -106,6 +112,19 @@ class ProductsFragment : Fragment(), MenuProvider {
         }
     }
 
+    private fun exportCsv(uri: Uri) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val products = viewModel.getAllProducts()
+                CsvUtils.exportProductsToCsv(requireContext(), uri, products)
+                Toast.makeText(context, "导出成功", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(context, "导出失败：${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     private fun observeData() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.products.collectLatest { products ->
@@ -115,13 +134,18 @@ class ProductsFragment : Fragment(), MenuProvider {
     }
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_sort, menu)
+        menuInflater.inflate(R.menu.menu_products, menu)
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
         return when (menuItem.itemId) {
             R.id.action_sort -> {
                 viewModel.toggleSort()
+                true
+            }
+            R.id.action_export_csv -> {
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                createDocument.launch("products_${timestamp}.csv")
                 true
             }
             else -> false

@@ -73,4 +73,8 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
             productDao.deleteAllProducts()
         }
     }
+
+    suspend fun getAllProducts(): List<Product> {
+        return productDao.getAllProductsSync()
+    }
 } 
