@@ -12,24 +12,24 @@ import com.sgm.a3dshop.data.entity.*
     entities = [
         Product::class,
         SaleRecord::class,
-        VoiceNote::class,
         PendingProduct::class,
         PendingHistory::class,
         IdeaRecord::class,
-        IdeaHistory::class
+        IdeaHistory::class,
+        VoiceNote::class
     ],
-    version = 4,
+    version = 1,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun productDao(): ProductDao
     abstract fun saleRecordDao(): SaleRecordDao
-    abstract fun voiceNoteDao(): VoiceNoteDao
     abstract fun pendingProductDao(): PendingProductDao
     abstract fun pendingHistoryDao(): PendingHistoryDao
     abstract fun ideaRecordDao(): IdeaRecordDao
     abstract fun ideaHistoryDao(): IdeaHistoryDao
+    abstract fun voiceNoteDao(): VoiceNoteDao
 
     companion object {
         @Volatile
@@ -37,13 +37,12 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
+                val userId = context.packageName + "_" + context.getSystemService(Context.USER_SERVICE).hashCode()
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "app_database"
-                )
-                .fallbackToDestructiveMigration()
-                .build()
+                    "3dshop_db_$userId"
+                ).build()
                 INSTANCE = instance
                 instance
             }

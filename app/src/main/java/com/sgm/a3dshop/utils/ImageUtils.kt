@@ -23,10 +23,15 @@ object ImageUtils {
     const val DIR_IDEAS = "idea_images"
     const val DIR_SALES = "sales_images"
 
+    private fun getUserSpecificDir(context: Context, type: String): File {
+        val userId = context.packageName + "_" + context.getSystemService(Context.USER_SERVICE).hashCode()
+        return File(context.getExternalFilesDir(null), "${userId}_$type").apply { mkdirs() }
+    }
+
     fun createImageFile(context: Context, type: String = DIR_SALES): File {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val filename = "IMG_${timestamp}.jpg"
-        val storageDir = File(context.getExternalFilesDir(null), type).apply { mkdirs() }
+        val storageDir = getUserSpecificDir(context, type)
         return File(storageDir, filename)
     }
 
