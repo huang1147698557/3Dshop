@@ -2,6 +2,7 @@ package com.sgm.a3dshop.ui.products
 
 import android.animation.ValueAnimator
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.core.content.ContextCompat
@@ -18,12 +19,27 @@ class ProductAdapter(
     private val onQuantityChanged: (Product, Int) -> Unit
 ) : ListAdapter<Product, ProductAdapter.ProductViewHolder>(ProductDiffCallback()) {
 
+    companion object {
+        private val tempRect = android.graphics.Rect()
+        private var lastTouchX = 0f
+        private var lastTouchY = 0f
+    }
+
+    // 先声明变量
+    private val itemTouchListener = View.OnTouchListener { _, event ->
+        lastTouchX = event.x
+        lastTouchY = event.y
+        false
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProductViewHolder {
         val binding = ItemProductBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false
         )
+        // 设置触摸监听器
+        binding.root.setOnTouchListener(itemTouchListener)
         return ProductViewHolder(binding)
     }
 
@@ -36,13 +52,23 @@ class ProductAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         init {
-            binding.root.setOnClickListener {
-                val position = adapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    onItemClick(getItem(position))
+            // 设置整个卡片的点击事件
+            binding.root.setOnClickListener { view ->
+                // 检查点击的位置是否在数量控制器区域内
+                binding.quantityControl.getHitRect(tempRect)
+                val x = lastTouchX.toInt()
+                val y = lastTouchY.toInt()
+                
+                // 如果点击位置不在数量控制器区域内，才触发详情页跳转
+                if (!tempRect.contains(x, y)) {
+                    val position = adapterPosition
+                    if (position != RecyclerView.NO_POSITION) {
+                        onItemClick(getItem(position))
+                    }
                 }
             }
 
+            // 设置数量控制按钮的点击事件
             binding.btnDecrease.setOnClickListener {
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
@@ -66,6 +92,9 @@ class ProductAdapter(
                     updateItemAppearance(product.copy(remainingCount = newCount))
                 }
             }
+
+            // 防止数量显示文本被点击触发详情页
+            binding.tvQuantity.setOnClickListener { }
         }
 
         fun bind(product: Product) {
