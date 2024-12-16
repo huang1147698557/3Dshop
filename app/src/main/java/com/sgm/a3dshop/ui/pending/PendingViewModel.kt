@@ -67,13 +67,16 @@ class PendingViewModel(application: Application) : AndroidViewModel(application)
     fun deletePendingProduct(pendingProduct: PendingProduct) {
         viewModelScope.launch {
             try {
+                // 先删除待打印记录
+                pendingProductDao.delete(pendingProduct)
+
                 // 处理图片
                 val newImagePath = pendingProduct.imageUrl?.let { originalImageUrl ->
                     if (!originalImageUrl.startsWith("http")) {
                         val originalFile = File(originalImageUrl)
                         if (originalFile.exists()) {
                             // 创建历史记录图片目录
-                            val historyImageDir = File(getApplication<Application>().getExternalFilesDir(null), "pending_images")
+                            val historyImageDir = File(getApplication<Application>().getExternalFilesDir(null), "history_images")
                             historyImageDir.mkdirs()
                             
                             // 复制图片到历史记录目录
@@ -97,9 +100,6 @@ class PendingViewModel(application: Application) : AndroidViewModel(application)
                     createdAt = pendingProduct.createdAt
                 )
                 pendingHistoryDao.insert(pendingHistory)
-                
-                // 然后删除待打印记录
-                pendingProductDao.delete(pendingProduct)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
