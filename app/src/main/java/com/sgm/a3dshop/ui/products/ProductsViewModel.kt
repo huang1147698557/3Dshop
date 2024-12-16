@@ -1,6 +1,7 @@
 package com.sgm.a3dshop.ui.products
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sgm.a3dshop.data.AppDatabase
@@ -46,6 +47,16 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
 
     fun insertProduct(product: Product) {
         viewModelScope.launch {
+            Log.d("ProductDB_Debug", "插入数据库时:")
+            Log.d("ProductDB_Debug", "- 名称: ${product.name}")
+            Log.d("ProductDB_Debug", "- 重量: ${product.weight}g")
+            Log.d("ProductDB_Debug", "- 打印时间: ${product.printTime}分钟")
+            Log.d("ProductDB_Debug", "- 人工费: ${product.laborCost}元")
+            Log.d("ProductDB_Debug", "- 盘数: ${product.plateCount}")
+            Log.d("ProductDB_Debug", "- 耗材单价: ${product.materialUnitPrice}元/kg")
+            Log.d("ProductDB_Debug", "- 后处理费: ${product.postProcessingCost}元")
+            Log.d("ProductDB_Debug", "- 数量: ${product.quantity}")
+            Log.d("ProductDB_Debug", "- 描述: ${product.description}")
             productDao.insertProduct(product)
         }
     }

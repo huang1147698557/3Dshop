@@ -64,14 +64,14 @@ object CsvUtils {
                             val profit = line?.get(13)?.toDoubleOrNull() ?: 0.0
                             
                             val description = """
-                                模型完数: ${df.format(modelWeight)}g
-                                打印时间: ${df.format(printTime)}h
+                                模型克数: ${df.format(modelWeight)}g
+                                打印时间: ${df.format(printTime)}小时
                                 耗材价格: ¥${df.format(materialPrice)}/kg
                                 后处理成本: ¥${df.format(postProcessingCost)}
                                 人工费: ¥${df.format(laborCost)}
                                 数量: $quantity
                                 盘数: $batchSize
-                                单个耗时: ${df.format(singleTime)}h
+                                单个耗时: ${df.format(singleTime)}小时
                                 单个成本: ¥${df.format(singleCost)}
                                 预计售价: ¥${df.format(estimatedPrice)}
                                 实际售价: ¥${df.format(actualPrice)}
@@ -82,9 +82,17 @@ object CsvUtils {
                                 name = name,
                                 price = actualPrice,
                                 description = description,
-                                imageUrl = imageUrl
+                                imageUrl = imageUrl,
+                                weight = modelWeight.toFloat(),
+                                printTime = (printTime * 60).toInt(), // 将小时转换为分钟
+                                laborCost = laborCost,
+                                plateCount = batchSize,
+                                materialUnitPrice = materialPrice,
+                                quantity = quantity
+
                             )
                             products.add(product)
+                            Log.d("CsvUtils", "Added product: ${product.name} with URL: ${product.quantity}")
                             Log.d("CsvUtils", "Added product: ${product.name} with URL: ${product.imageUrl}")
                         }
                     } catch (e: Exception) {
@@ -112,7 +120,7 @@ object CsvUtils {
                 writer.writeNext(arrayOf(
                     "商品名称",
                     "图片链接",
-                    "模型完数(g)",
+                    "模型克数(g)",
                     "打印时间(h)",
                     "耗材价格(¥/kg)",
                     "后处理成本(¥)",
@@ -164,7 +172,7 @@ object CsvUtils {
         val result = mutableMapOf<String, String>()
         description.lines().forEach { line ->
             when {
-                line.startsWith("模型完数:") -> result["modelWeight"] = extractNumber(line)
+                line.startsWith("模型克数:") -> result["modelWeight"] = extractNumber(line)
                 line.startsWith("打印时间:") -> result["printTime"] = extractNumber(line)
                 line.startsWith("耗材价格:") -> result["materialPrice"] = extractNumber(line)
                 line.startsWith("后处理成本:") -> result["postProcessingCost"] = extractNumber(line)
@@ -188,4 +196,14 @@ object CsvUtils {
             .replace("/kg", "")
             .trim()
     }
-} 
+
+    private fun processImageUrl(url: String?): String? {
+        return url?.let {
+            if (it.startsWith("http:/")) {
+                "https://" + it.substring(6)
+            } else {
+                it
+            }
+        }
+    }
+}

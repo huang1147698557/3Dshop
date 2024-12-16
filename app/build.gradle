@@ -21,8 +21,22 @@ android {
     }
 
     buildTypes {
-        release {
+        debug {
+            //开启混淆
             minifyEnabled false
+            //开启资源压缩
+            shrinkResources false
+            //Zipalign优化
+            zipAlignEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        release {
+            //开启混淆
+            minifyEnabled true
+            //开启资源压缩
+            shrinkResources true
+            //Zipalign优化
+            zipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -72,7 +86,7 @@ dependencies {
     kapt "androidx.room:room-compiler:$room_version"
 
     implementation 'com.github.bumptech.glide:glide:4.12.0'
-    kapt 'com.github.bumptech.glide:compiler:4.12.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.12.0'
 
     // CSV处理
     implementation 'com.opencsv:opencsv:5.5.2'

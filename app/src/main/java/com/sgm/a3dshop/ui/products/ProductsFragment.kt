@@ -87,6 +87,10 @@ class ProductsFragment : Fragment(), MenuProvider {
             btnImport.setOnClickListener {
                 launchFilePicker()
             }
+
+            fabAdd.setOnClickListener {
+                findNavController().navigate(R.id.action_products_to_add)
+            }
         }
     }
 

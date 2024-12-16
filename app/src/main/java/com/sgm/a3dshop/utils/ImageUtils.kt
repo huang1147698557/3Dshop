@@ -23,7 +23,7 @@ object ImageUtils {
     const val DIR_IDEAS = "idea_images"
     const val DIR_SALES = "sales_images"
 
-    private fun getUserSpecificDir(context: Context, type: String): File {
+    internal fun getUserSpecificDir(context: Context, type: String): File {
         val userId = context.packageName + "_" + context.getSystemService(Context.USER_SERVICE).hashCode()
         return File(context.getExternalFilesDir(null), "${userId}_$type").apply { mkdirs() }
     }
@@ -113,5 +113,53 @@ object ImageUtils {
 
     fun saveImageFromUri(context: Context, uri: Uri, type: String = DIR_SALES): String? {
         return compressImage(context, uri, type)
+    }
+
+    fun fixImageOrientation(imagePath: String) {
+        try {
+            val exif = ExifInterface(imagePath)
+            val orientation = exif.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_UNDEFINED
+            )
+
+            if (orientation != ExifInterface.ORIENTATION_NORMAL) {
+                // 读取原始图片
+                val bitmap = android.graphics.BitmapFactory.decodeFile(imagePath)
+                
+                // 根据EXIF信息旋转图片
+                val matrix = Matrix()
+                when (orientation) {
+                    ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+                    ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+                    ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+                    ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.preScale(-1f, 1f)
+                    ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.preScale(1f, -1f)
+                }
+
+                // 创建新的图片
+                val rotatedBitmap = Bitmap.createBitmap(
+                    bitmap, 0, 0,
+                    bitmap.width, bitmap.height,
+                    matrix, true
+                )
+
+                // 保存旋转后的图片
+                FileOutputStream(imagePath).use { out ->
+                    rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+                }
+
+                // 清理
+                bitmap.recycle()
+                rotatedBitmap.recycle()
+
+                // 更新EXIF信息
+                val newExif = ExifInterface(imagePath)
+                newExif.setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL.toString())
+                newExif.saveAttributes()
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
     }
 } 
