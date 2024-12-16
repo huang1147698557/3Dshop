@@ -24,17 +24,22 @@ class ProductSelectFragment : Fragment() {
         ProductSelectViewModelFactory(requireActivity().application)
     }
 
-    private val productAdapter = ProductAdapter { product ->
-        // 创建销售记录并返回
-        val saleRecord = SaleRecord(
-            productId = product.id,
-            name = product.name,
-            salePrice = product.price,
-            imageUrl = product.imageUrl
-        )
-        viewModel.insertSaleRecord(saleRecord)
-        findNavController().navigateUp()
-    }
+    private val productAdapter = ProductAdapter(
+        onItemClick = { product ->
+            // 创建销售记录并返回
+            val saleRecord = SaleRecord(
+                productId = product.id,
+                name = product.name,
+                salePrice = product.price,
+                imageUrl = product.imageUrl
+            )
+            viewModel.insertSaleRecord(saleRecord)
+            findNavController().navigateUp()
+        },
+        onQuantityChanged = { _, _ ->
+            // 在销售选择界面，我们不需要处理数量变化
+        }
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater,

@@ -48,6 +48,17 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun updateProductQuantity(product: Product, newCount: Int) {
+        viewModelScope.launch {
+            val updatedProduct = product.copy(remainingCount = newCount)
+            productDao.updateProduct(updatedProduct)
+            Log.d("ProductDB_Debug", "更新商品数量:")
+            Log.d("ProductDB_Debug", "- ID: ${updatedProduct.id}")
+            Log.d("ProductDB_Debug", "- 名称: ${updatedProduct.name}")
+            Log.d("ProductDB_Debug", "- 新数量: $newCount")
+        }
+    }
+
     fun insertProduct(product: Product) {
         viewModelScope.launch {
             Log.d("ProductDB_Debug", "插入数据库时:")
@@ -57,7 +68,7 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
             Log.d("ProductDB_Debug", "- 人工费: ${product.laborCost}元")
             Log.d("ProductDB_Debug", "- 盘数: ${product.plateCount}")
             Log.d("ProductDB_Debug", "- 耗材单价: ${product.materialUnitPrice}元/kg")
-            Log.d("ProductDB_Debug", "- 后处理费: ${product.postProcessingCost}��")
+            Log.d("ProductDB_Debug", "- 后处理费: ${product.postProcessingCost}元")
             Log.d("ProductDB_Debug", "- 数量: ${product.quantity}")
             Log.d("ProductDB_Debug", "- 描述: ${product.description}")
             productDao.insertProduct(product)

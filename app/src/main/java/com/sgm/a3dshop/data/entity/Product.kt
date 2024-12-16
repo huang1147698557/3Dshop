@@ -29,7 +29,8 @@ data class Product(
     val materialUnitPrice: Double = 0.0, // 耗材单价(元/kg)
     val profitRate: Double = 0.3, // 默认利润率30%
     val postProcessingCost: Double = 0.0, // 后处理物料费
-    val quantity: Int = 1 // 数量
+    val quantity: Int = 1, // 数量
+    val remainingCount: Int = quantity // 剩余数量，默认等于quantity
 ) : Parcelable {
     companion object {
         private const val TAG = "Product_Calculation"

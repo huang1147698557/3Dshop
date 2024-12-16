@@ -31,59 +31,64 @@ class ProductSelectForPendingFragment : Fragment() {
         PendingViewModelFactory(requireActivity().application)
     }
 
-    private val productAdapter = ProductAdapter { product ->
-        lifecycleScope.launch {
-            try {
-                // 复制商品图片到待打商品的存储位置
-                val newImagePath = if (product.imageUrl != null) {
-                    if (product.imageUrl.startsWith("http")) {
-                        // 处理网络图片
-                        withContext(Dispatchers.IO) {
-                            try {
-                                val bitmap = Glide.with(requireContext())
-                                    .asBitmap()
-                                    .load(product.imageUrl)
-                                    .submit()
-                                    .get()
+    private val productAdapter = ProductAdapter(
+        onItemClick = { product ->
+            lifecycleScope.launch {
+                try {
+                    // 复制商品图片到待打商品的存储位置
+                    val newImagePath = if (product.imageUrl != null) {
+                        if (product.imageUrl.startsWith("http")) {
+                            // 处理网络图片
+                            withContext(Dispatchers.IO) {
+                                try {
+                                    val bitmap = Glide.with(requireContext())
+                                        .asBitmap()
+                                        .load(product.imageUrl)
+                                        .submit()
+                                        .get()
 
-                                val outputFile = ImageUtils.createImageFile(requireContext())
-                                FileOutputStream(outputFile).use { out ->
-                                    bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+                                    val outputFile = ImageUtils.createImageFile(requireContext())
+                                    FileOutputStream(outputFile).use { out ->
+                                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+                                    }
+                                    outputFile.absolutePath
+                                } catch (e: Exception) {
+                                    null
                                 }
-                                outputFile.absolutePath
-                            } catch (e: Exception) {
+                            }
+                        } else {
+                            // 处理本地图片
+                            val sourceFile = File(product.imageUrl)
+                            if (sourceFile.exists()) {
+                                val destFile = ImageUtils.createImageFile(requireContext())
+                                sourceFile.copyTo(destFile, overwrite = true)
+                                destFile.absolutePath
+                            } else {
                                 null
                             }
                         }
                     } else {
-                        // 处理本地图片
-                        val sourceFile = File(product.imageUrl)
-                        if (sourceFile.exists()) {
-                            val destFile = ImageUtils.createImageFile(requireContext())
-                            sourceFile.copyTo(destFile, overwrite = true)
-                            destFile.absolutePath
-                        } else {
-                            null
-                        }
+                        null
                     }
-                } else {
-                    null
-                }
 
-                // 创建待打商品记录并返回
-                val pendingProduct = PendingProduct(
-                    productId = product.id,
-                    name = product.name,
-                    salePrice = product.price,
-                    imageUrl = newImagePath
-                )
-                viewModel.insertPendingProduct(pendingProduct)
-                findNavController().navigateUp()
-            } catch (e: Exception) {
-                Toast.makeText(context, "添加商品失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                    // 创建待打商品记录并返回
+                    val pendingProduct = PendingProduct(
+                        productId = product.id,
+                        name = product.name,
+                        salePrice = product.price,
+                        imageUrl = newImagePath
+                    )
+                    viewModel.insertPendingProduct(pendingProduct)
+                    findNavController().navigateUp()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "添加商品失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
+        },
+        onQuantityChanged = { _, _ ->
+            // 在待打印选择界面，我们不需要处理数量变化
         }
-    }
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater,

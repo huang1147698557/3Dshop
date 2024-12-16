@@ -38,10 +38,15 @@ class ProductsFragment : Fragment(), MenuProvider {
         ProductsViewModelFactory(requireActivity().application)
     }
 
-    private val productAdapter = ProductAdapter { product ->
-        val action = ProductsFragmentDirections.actionProductsToDetail(product.id.toLong())
-        findNavController().navigate(action)
-    }
+    private val productAdapter = ProductAdapter(
+        onItemClick = { product ->
+            val action = ProductsFragmentDirections.actionProductsToDetail(product.id.toLong())
+            findNavController().navigate(action)
+        },
+        onQuantityChanged = { product, newCount ->
+            viewModel.updateProductQuantity(product, newCount)
+        }
+    )
 
     private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { handleCsvFile(it) }
@@ -220,7 +225,7 @@ class ProductsFragment : Fragment(), MenuProvider {
 
     private fun setupFragmentResultListener() {
         setFragmentResultListener("product_key") { _, bundle ->
-            bundle.getParcelable<Product>("product")?.let { product ->
+            bundle.getParcelable("product", Product::class.java)?.let { product ->
                 viewModel.insertProduct(product)
             }
         }
