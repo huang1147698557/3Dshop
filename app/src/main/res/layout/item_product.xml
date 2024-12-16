@@ -28,7 +28,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@android:color/black"
-                android:textSize="16sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
                 tools:text="标题" />
 
@@ -38,13 +38,13 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:textColor="#FF5252"
-                android:textSize="14sp"
+                android:textSize="18sp"
                 tools:text="价格" />
 
             <LinearLayout
                 android:id="@+id/quantity_control"
-                android:layout_width="120dp"
-                android:layout_height="40dp"
+                android:layout_width="90dp"
+                android:layout_height="30dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_quantity_control"
                 android:orientation="horizontal"
@@ -52,16 +52,16 @@
 
                 <ImageButton
                     android:id="@+id/btn_decrease"
-                    android:layout_width="40dp"
+                    android:layout_width="20dp"
                     android:layout_height="match_parent"
                     android:background="?attr/selectableItemBackground"
                     android:src="@drawable/ic_remove"
-                    android:tint="@color/purple_500"
+                    android:tint="@color/dark_gray"
                     android:contentDescription="减少数量"/>
 
                 <TextView
                     android:id="@+id/tv_quantity"
-                    android:layout_width="40dp"
+                    android:layout_width="20dp"
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:textSize="16sp"
@@ -70,11 +70,11 @@
 
                 <ImageButton
                     android:id="@+id/btn_increase"
-                    android:layout_width="40dp"
+                    android:layout_width="20dp"
                     android:layout_height="match_parent"
                     android:background="?attr/selectableItemBackground"
                     android:src="@drawable/ic_add"
-                    android:tint="@color/purple_500"
+                    android:tint="@color/dark_gray2"
                     android:contentDescription="增加数量"/>
 
             </LinearLayout>

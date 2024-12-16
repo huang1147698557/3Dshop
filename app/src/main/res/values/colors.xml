@@ -10,4 +10,7 @@
     <color name="delete_background">#FFEF5350</color>
     <color name="price_color">#FF5252</color>
     <color name="record_red">#FFFF4444</color>
+    <color name="light_gray">#FFE0E0E0</color>
+    <color name="dark_gray">#FF757575</color>
+    <color name="dark_gray2">#50000000</color>
 </resources>
