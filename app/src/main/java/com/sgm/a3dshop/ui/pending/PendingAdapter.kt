@@ -51,12 +51,22 @@ class PendingAdapter(
                 tvTime.text = dateFormat.format(pendingProduct.createdAt)
                 tvNote.text = pendingProduct.note ?: ""
 
-                pendingProduct.imageUrl?.let { imageUrl ->
-                    Glide.with(ivPhoto)
-                        .load(File(imageUrl))
-                        .placeholder(R.drawable.placeholder_image)
-                        .fitCenter()
-                        .into(ivPhoto)
+                // 清除之前的图片
+                Glide.with(ivPhoto).clear(ivPhoto)
+                
+                if (pendingProduct.imageUrl != null && pendingProduct.imageUrl.isNotEmpty()) {
+                    val imageFile = File(pendingProduct.imageUrl)
+                    if (imageFile.exists()) {
+                        Glide.with(ivPhoto)
+                            .load(imageFile)
+                            .placeholder(R.drawable.ic_image_placeholder)
+                            .error(R.drawable.ic_image_error)
+                            .into(ivPhoto)
+                    } else {
+                        ivPhoto.setImageResource(R.drawable.ic_image_placeholder)
+                    }
+                } else {
+                    ivPhoto.setImageResource(R.drawable.ic_image_placeholder)
                 }
             }
         }
