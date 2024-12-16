@@ -52,8 +52,14 @@ class ProductDetailFragment : Fragment() {
             product?.let {
                 // 显示图片
                 if (!it.imageUrl.isNullOrEmpty()) {
+                    val imageSource = if (it.imageUrl.startsWith("http")) {
+                        it.imageUrl  // 网络图片URL
+                    } else {
+                        File(it.imageUrl)  // 本地文件路径
+                    }
+                    
                     Glide.with(this)
-                        .load(File(it.imageUrl))
+                        .load(imageSource)
                         .into(binding.productImage)
                 }
 
@@ -71,7 +77,6 @@ class ProductDetailFragment : Fragment() {
                 binding.tvLaborCost.text = String.format("人工费: ¥%.2f", it.laborCost)
                 binding.tvPlateCount.text = String.format("盘数: %d", it.plateCount)
                 binding.tvMaterialUnitPrice.text = String.format("耗材单价: ¥%.2f/kg", it.materialUnitPrice)
-                binding.tvProfitRate.text = String.format("利润率: %.1f%%", it.profitRate * 100)
 
                 // 显示额外信息
                 binding.tvPostProcessingCost.text = String.format("后处理物料费: ¥%.2f", it.postProcessingCost)
