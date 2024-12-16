@@ -162,4 +162,18 @@
             app:argType="long" />
     </fragment>
 
+    <fragment
+        android:id="@+id/productEditFragment"
+        android:name="com.sgm.a3dshop.ui.products.ProductEditFragment"
+        android:label="编辑商品"
+        tools:layout="@layout/fragment_product_edit">
+        <argument
+            android:name="productId"
+            app:argType="long" />
+    </fragment>
+
+    <action
+        android:id="@+id/action_productDetailFragment_to_productEditFragment"
+        app:destination="@id/productEditFragment" />
+
 </navigation>

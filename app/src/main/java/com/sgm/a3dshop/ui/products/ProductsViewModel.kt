@@ -2,8 +2,7 @@ package com.sgm.a3dshop.ui.products
 
 import android.app.Application
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.sgm.a3dshop.data.AppDatabase
 import com.sgm.a3dshop.data.entity.Product
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +21,10 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
 
     init {
         loadProducts()
+    }
+
+    fun getProductById(id: Long): LiveData<Product> = liveData {
+        emit(productDao.getProductById(id))
     }
 
     private fun loadProducts() {
@@ -54,7 +57,7 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
             Log.d("ProductDB_Debug", "- 人工费: ${product.laborCost}元")
             Log.d("ProductDB_Debug", "- 盘数: ${product.plateCount}")
             Log.d("ProductDB_Debug", "- 耗材单价: ${product.materialUnitPrice}元/kg")
-            Log.d("ProductDB_Debug", "- 后处理费: ${product.postProcessingCost}元")
+            Log.d("ProductDB_Debug", "- 后处理费: ${product.postProcessingCost}��")
             Log.d("ProductDB_Debug", "- 数量: ${product.quantity}")
             Log.d("ProductDB_Debug", "- 描述: ${product.description}")
             productDao.insertProduct(product)
