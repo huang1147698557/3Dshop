@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -15,6 +16,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.sgm.a3dshop.R
+import com.sgm.a3dshop.data.entity.Product
 import com.sgm.a3dshop.databinding.FragmentProductsBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -56,12 +58,12 @@ class ProductsFragment : Fragment(), MenuProvider {
         setupToolbar()
         setupViews()
         observeData()
+        setupFragmentResultListener()
         requireActivity().addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     private fun setupToolbar() {
         (requireActivity() as AppCompatActivity).setSupportActionBar(binding.toolbar)
-        binding.toolbar.title = "商品简介"
     }
 
     private fun setupViews() {
@@ -71,26 +73,70 @@ class ProductsFragment : Fragment(), MenuProvider {
                 adapter = productAdapter
                 addOnScrollListener(object : RecyclerView.OnScrollListener() {
                     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                        if (dy > 0 && fabScrollTop.visibility == View.VISIBLE) {
-                            fabScrollTop.hide()
-                        } else if (dy < 0 && fabScrollTop.visibility != View.VISIBLE) {
-                            fabScrollTop.show()
+                        if (dy > 0) {
+                            fabAdd.hide()
+                            if ((recyclerView.layoutManager as LinearLayoutManager)
+                                    .findFirstVisibleItemPosition() > 5) {
+                                fabScrollTop.show()
+                            }
+                        } else {
+                            fabAdd.show()
+                            if ((recyclerView.layoutManager as LinearLayoutManager)
+                                    .findFirstVisibleItemPosition() <= 5) {
+                                fabScrollTop.hide()
+                            }
                         }
                     }
                 })
             }
 
-            fabScrollTop.setOnClickListener {
-                recyclerProducts.smoothScrollToPosition(0)
-            }
-
-            btnImport.setOnClickListener {
-                launchFilePicker()
-            }
-
             fabAdd.setOnClickListener {
                 findNavController().navigate(R.id.action_products_to_add)
             }
+
+            fabScrollTop.setOnClickListener {
+                recyclerProducts.smoothScrollToPosition(0)
+            }
+        }
+    }
+
+    private fun observeData() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.products.collectLatest { products ->
+                productAdapter.submitList(products)
+                binding.emptyView.visibility = if (products.isEmpty()) View.VISIBLE else View.GONE
+            }
+        }
+    }
+
+    private fun setupFragmentResultListener() {
+        setFragmentResultListener("product_key") { _, bundle ->
+            bundle.getParcelable<Product>("product")?.let { product ->
+                viewModel.insertProduct(product)
+            }
+        }
+    }
+
+    override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+        menuInflater.inflate(R.menu.menu_products, menu)
+    }
+
+    override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+        return when (menuItem.itemId) {
+            R.id.menu_sort -> {
+                viewModel.toggleSort()
+                true
+            }
+            R.id.menu_import -> {
+                launchFilePicker()
+                true
+            }
+            R.id.menu_export -> {
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                createDocument.launch("products_$timestamp.csv")
+                true
+            }
+            else -> false
         }
     }
 
@@ -121,38 +167,11 @@ class ProductsFragment : Fragment(), MenuProvider {
             try {
                 val products = viewModel.getAllProducts()
                 CsvUtils.exportProductsToCsv(requireContext(), uri, products)
-                Toast.makeText(context, "导出成功", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "导出成功：${products.size}条数据", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 e.printStackTrace()
                 Toast.makeText(context, "导出失败：${e.message}", Toast.LENGTH_LONG).show()
             }
-        }
-    }
-
-    private fun observeData() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.products.collectLatest { products ->
-                productAdapter.submitList(products)
-            }
-        }
-    }
-
-    override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_products, menu)
-    }
-
-    override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-        return when (menuItem.itemId) {
-            R.id.action_sort -> {
-                viewModel.toggleSort()
-                true
-            }
-            R.id.action_export_csv -> {
-                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                createDocument.launch("products_${timestamp}.csv")
-                true
-            }
-            else -> false
         }
     }
 

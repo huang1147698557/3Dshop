@@ -47,199 +47,173 @@
 
     </FrameLayout>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <ScrollView
         android:id="@+id/formContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:padding="16dp"
+        android:fillViewport="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/camera_container">
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilName"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="商品名称"
-            app:layout_constraintTop_toTopOf="parent">
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etName"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="text" />
+                android:hint="商品名称（必填）">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilWeight"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="重量(g)"
-            app:layout_constraintTop_toBottomOf="@id/tilName">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etWeight"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilWeight"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal" />
+                android:layout_marginTop="8dp"
+                android:hint="重量(g)（必填）">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etWeight"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilPrintTime"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="打印时间(小时)"
-            app:layout_constraintTop_toBottomOf="@id/tilWeight">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etPrintTime"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilPrintTime"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number" />
+                android:layout_marginTop="8dp"
+                android:hint="打印时间(小时)（必填）">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPrintTime"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilPrice"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="价格(元)"
-            app:layout_constraintTop_toBottomOf="@id/tilPrintTime">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etPrice"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilPrice"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal" />
+                android:layout_marginTop="8dp"
+                android:hint="售价（必填）">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPrice"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilLaborCost"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="人工费(元)"
-            app:layout_constraintTop_toBottomOf="@id/tilPrice">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etLaborCost"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilQuantity"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal" />
+                android:layout_marginTop="8dp"
+                android:hint="数量">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etQuantity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:text="1" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilPlateCount"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="盘数"
-            app:layout_constraintTop_toBottomOf="@id/tilLaborCost">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etPlateCount"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilPlateCount"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number" />
+                android:layout_marginTop="8dp"
+                android:hint="盘数">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPlateCount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:text="1" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilMaterialUnitPrice"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="耗材单价(元/kg)"
-            app:layout_constraintTop_toBottomOf="@id/tilPlateCount">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etMaterialUnitPrice"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilMaterialUnitPrice"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal" />
+                android:layout_marginTop="8dp"
+                android:hint="耗材单价(元/kg)">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etMaterialUnitPrice"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:text="39" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilPostProcessingCost"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="后处理物料费(元)"
-            app:layout_constraintTop_toBottomOf="@id/tilMaterialUnitPrice">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etPostProcessingCost"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilPostProcessingCost"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal" />
+                android:layout_marginTop="8dp"
+                android:hint="后处理物料费">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPostProcessingCost"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:text="0" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilQuantity"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="数量"
-            app:layout_constraintTop_toBottomOf="@id/tilPostProcessingCost">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etQuantity"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilLaborCost"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number" />
+                android:layout_marginTop="8dp"
+                android:hint="人工费">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etLaborCost"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:text="0" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilProfitRate"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="利润率(%)"
-            app:layout_constraintTop_toBottomOf="@id/tilQuantity">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etProfitRate"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilNote"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal"
-                android:text="30" />
+                android:layout_marginTop="8dp"
+                android:hint="备注">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:minLines="3" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilNote"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="备注"
-            app:layout_constraintTop_toBottomOf="@id/tilProfitRate">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etNote"
+            <Button
+                android:id="@+id/btnSave"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textMultiLine"
-                android:minLines="3" />
+                android:layout_marginTop="16dp"
+                android:text="保存" />
 
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <Button
-            android:id="@+id/btnSave"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="保存"
-            app:layout_constraintTop_toBottomOf="@id/tilNote" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
+    </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout> 

@@ -11,6 +11,7 @@ import com.sgm.a3dshop.data.entity.PendingProduct
 import com.sgm.a3dshop.data.entity.Product
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.io.File
 
 class PendingViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
@@ -65,18 +66,43 @@ class PendingViewModel(application: Application) : AndroidViewModel(application)
 
     fun deletePendingProduct(pendingProduct: PendingProduct) {
         viewModelScope.launch {
-            // 先保存到历史记录
-            val pendingHistory = PendingHistory(
-                name = pendingProduct.name,
-                salePrice = pendingProduct.salePrice,
-                imageUrl = pendingProduct.imageUrl,
-                note = pendingProduct.note,
-                createdAt = pendingProduct.createdAt
-            )
-            pendingHistoryDao.insert(pendingHistory)
-            
-            // 然后删除待打印记录
-            pendingProductDao.delete(pendingProduct)
+            try {
+                // 处理图片
+                val newImagePath = pendingProduct.imageUrl?.let { originalImageUrl ->
+                    if (!originalImageUrl.startsWith("http")) {
+                        val originalFile = File(originalImageUrl)
+                        if (originalFile.exists()) {
+                            // 创建历史记录图片目录
+                            val historyImageDir = File(getApplication<Application>().getExternalFilesDir(null), "pending_images")
+                            historyImageDir.mkdirs()
+                            
+                            // 复制图片到历史记录目录
+                            val newFile = File(historyImageDir, originalFile.name)
+                            originalFile.copyTo(newFile, overwrite = true)
+                            newFile.absolutePath
+                        } else {
+                            null
+                        }
+                    } else {
+                        originalImageUrl
+                    }
+                }
+
+                // 保存到历史记录
+                val pendingHistory = PendingHistory(
+                    name = pendingProduct.name,
+                    salePrice = pendingProduct.salePrice,
+                    imageUrl = newImagePath,
+                    note = pendingProduct.note,
+                    createdAt = pendingProduct.createdAt
+                )
+                pendingHistoryDao.insert(pendingHistory)
+                
+                // 然后删除待打印记录
+                pendingProductDao.delete(pendingProduct)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

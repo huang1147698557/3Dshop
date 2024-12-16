@@ -65,7 +65,7 @@ class DataTransferManager(private val context: Context) {
                         continue
                     }
                 }
-                // 如果所有格式都失败了，记录错误并返回当前时间
+                // 如果所有格式都失败了记录错误并返回当前时间
                 println("Failed to parse date: $dateStr")
                 return Date()
             }
@@ -102,10 +102,14 @@ class DataTransferManager(private val context: Context) {
 
             // 创建ZIP文件
             val zipFile = File(exportDir, "app_data_${System.currentTimeMillis()}.zip")
+            var totalSize = 0L
+            
             ZipOutputStream(FileOutputStream(zipFile)).use { zip ->
                 // 写入数据JSON
                 zip.putNextEntry(ZipEntry("data.json"))
-                zip.write(gson.toJson(appData).toByteArray())
+                val jsonData = gson.toJson(appData).toByteArray()
+                zip.write(jsonData)
+                totalSize += jsonData.size
                 zip.closeEntry()
 
                 // 复制录音文件
@@ -115,6 +119,7 @@ class DataTransferManager(private val context: Context) {
                         zip.putNextEntry(ZipEntry("voices/${voiceFile.name}"))
                         voiceFile.inputStream().use { input ->
                             input.copyTo(zip)
+                            totalSize += voiceFile.length()
                         }
                         zip.closeEntry()
                     }
@@ -123,27 +128,59 @@ class DataTransferManager(private val context: Context) {
                 // 复制待打印图片
                 appData.pendingProducts.forEach { pendingProduct ->
                     pendingProduct.imageUrl?.let { imageUrl ->
-                        val imageFile = File(imageUrl)
-                        if (imageFile.exists()) {
-                            zip.putNextEntry(ZipEntry("pending_images/${imageFile.name}"))
-                            imageFile.inputStream().use { input ->
-                                input.copyTo(zip)
+                        if (!imageUrl.startsWith("http")) {
+                            val imageFile = File(imageUrl)
+                            if (imageFile.exists()) {
+                                zip.putNextEntry(ZipEntry("pending_images/${imageFile.name}"))
+                                imageFile.inputStream().use { it.copyTo(zip) }
+                                totalSize += imageFile.length()
+                                zip.closeEntry()
                             }
-                            zip.closeEntry()
                         }
                     }
                 }
 
-                // 复制创意图片
+                // 复制待打印历史记录图片
+                appData.pendingHistory.forEach { pendingHistory ->
+                    pendingHistory.imageUrl?.let { imageUrl ->
+                        if (!imageUrl.startsWith("http")) {
+                            val imageFile = File(imageUrl)
+                            if (imageFile.exists()) {
+                                zip.putNextEntry(ZipEntry("pending_images/${imageFile.name}"))
+                                imageFile.inputStream().use { it.copyTo(zip) }
+                                totalSize += imageFile.length()
+                                zip.closeEntry()
+                            }
+                        }
+                    }
+                }
+
+                // 写入创意图片
                 appData.ideaRecords.forEach { ideaRecord ->
                     ideaRecord.imageUrl?.let { imageUrl ->
-                        val imageFile = File(imageUrl)
-                        if (imageFile.exists()) {
-                            zip.putNextEntry(ZipEntry("idea_images/${imageFile.name}"))
-                            imageFile.inputStream().use { input ->
-                                input.copyTo(zip)
+                        if (!imageUrl.startsWith("http")) {
+                            val imageFile = File(imageUrl)
+                            if (imageFile.exists()) {
+                                zip.putNextEntry(ZipEntry("idea_images/${imageFile.name}"))
+                                imageFile.inputStream().use { it.copyTo(zip) }
+                                totalSize += imageFile.length()
+                                zip.closeEntry()
                             }
-                            zip.closeEntry()
+                        }
+                    }
+                }
+
+                // 写入创意历史记录图片
+                appData.ideaHistory.forEach { ideaHistory ->
+                    ideaHistory.imageUrl?.let { imageUrl ->
+                        if (!imageUrl.startsWith("http")) {
+                            val imageFile = File(imageUrl)
+                            if (imageFile.exists()) {
+                                zip.putNextEntry(ZipEntry("idea_images/${imageFile.name}"))
+                                imageFile.inputStream().use { it.copyTo(zip) }
+                                totalSize += imageFile.length()
+                                zip.closeEntry()
+                            }
                         }
                     }
                 }
@@ -168,22 +205,33 @@ class DataTransferManager(private val context: Context) {
                             dataJson = zip.bufferedReader().readText()
                         }
                         entry.name.startsWith("voices/") -> {
-                            val voiceFile = File(context.cacheDir, entry.name.substringAfter("voices/"))
-                            voiceFile.parentFile?.mkdirs()
+                            val voiceDir = File(context.getExternalFilesDir(null), "VoiceNotes")
+                            voiceDir.mkdirs()
+                            val voiceFile = File(voiceDir, entry.name.substringAfter("voices/"))
                             voiceFile.outputStream().use { output ->
                                 zip.copyTo(output)
                             }
                         }
+                        entry.name.startsWith("sales_images/") -> {
+                            val imageDir = File(context.getExternalFilesDir(null), "3DShop_Images")
+                            imageDir.mkdirs()
+                            val imageFile = File(imageDir, entry.name.substringAfter("sales_images/"))
+                            imageFile.outputStream().use { output ->
+                                zip.copyTo(output)
+                            }
+                        }
                         entry.name.startsWith("pending_images/") -> {
-                            val imageFile = File(context.cacheDir, entry.name.substringAfter("pending_images/"))
-                            imageFile.parentFile?.mkdirs()
+                            val imageDir = File(context.getExternalFilesDir(null), "pending_images")
+                            imageDir.mkdirs()
+                            val imageFile = File(imageDir, entry.name.substringAfter("pending_images/"))
                             imageFile.outputStream().use { output ->
                                 zip.copyTo(output)
                             }
                         }
                         entry.name.startsWith("idea_images/") -> {
-                            val imageFile = File(context.cacheDir, entry.name.substringAfter("idea_images/"))
-                            imageFile.parentFile?.mkdirs()
+                            val imageDir = File(context.getExternalFilesDir(null), "idea_images")
+                            imageDir.mkdirs()
+                            val imageFile = File(imageDir, entry.name.substringAfter("idea_images/"))
                             imageFile.outputStream().use { output ->
                                 zip.copyTo(output)
                             }
@@ -206,14 +254,75 @@ class DataTransferManager(private val context: Context) {
                         database.ideaRecordDao().deleteAll()
                         database.ideaHistoryDao().deleteAll()
 
-                        // 导入新数据
-                        database.productDao().insertProducts(appData.products)
-                        database.saleRecordDao().insertSaleRecords(appData.saleRecords)
+                        // 更新图片路径
+                        val updatedProducts = appData.products.map { product ->
+                            if (product.imageUrl != null && !product.imageUrl.startsWith("http")) {
+                                val fileName = File(product.imageUrl).name
+                                val newPath = File(context.getExternalFilesDir(null), "sales_images/$fileName").absolutePath
+                                product.copy(imageUrl = newPath)
+                            } else {
+                                product
+                            }
+                        }
+
+                        val updatedSaleRecords = appData.saleRecords.map { saleRecord ->
+                            if (saleRecord.imageUrl != null && !saleRecord.imageUrl.startsWith("http")) {
+                                val fileName = File(saleRecord.imageUrl).name
+                                val newPath = File(context.getExternalFilesDir(null), "sales_images/$fileName").absolutePath
+                                saleRecord.copy(imageUrl = newPath)
+                            } else {
+                                saleRecord
+                            }
+                        }
+
+                        val updatedPendingProducts = appData.pendingProducts.map { pendingProduct ->
+                            if (pendingProduct.imageUrl != null && !pendingProduct.imageUrl.startsWith("http")) {
+                                val fileName = File(pendingProduct.imageUrl).name
+                                val newPath = File(context.getExternalFilesDir(null), "pending_images/$fileName").absolutePath
+                                pendingProduct.copy(imageUrl = newPath)
+                            } else {
+                                pendingProduct
+                            }
+                        }
+
+                        val updatedPendingHistory = appData.pendingHistory.map { pendingHistory ->
+                            if (pendingHistory.imageUrl != null && !pendingHistory.imageUrl.startsWith("http")) {
+                                val fileName = File(pendingHistory.imageUrl).name
+                                val newPath = File(context.getExternalFilesDir(null), "pending_images/$fileName").absolutePath
+                                pendingHistory.copy(imageUrl = newPath)
+                            } else {
+                                pendingHistory
+                            }
+                        }
+
+                        val updatedIdeaRecords = appData.ideaRecords.map { ideaRecord ->
+                            if (ideaRecord.imageUrl != null && !ideaRecord.imageUrl.startsWith("http")) {
+                                val fileName = File(ideaRecord.imageUrl).name
+                                val newPath = File(context.getExternalFilesDir(null), "idea_images/$fileName").absolutePath
+                                ideaRecord.copy(imageUrl = newPath)
+                            } else {
+                                ideaRecord
+                            }
+                        }
+
+                        val updatedIdeaHistory = appData.ideaHistory.map { ideaHistory ->
+                            if (ideaHistory.imageUrl != null && !ideaHistory.imageUrl.startsWith("http")) {
+                                val fileName = File(ideaHistory.imageUrl).name
+                                val newPath = File(context.getExternalFilesDir(null), "idea_images/$fileName").absolutePath
+                                ideaHistory.copy(imageUrl = newPath)
+                            } else {
+                                ideaHistory
+                            }
+                        }
+
+                        // 导入更新后的数据
+                        database.productDao().insertProducts(updatedProducts)
+                        database.saleRecordDao().insertSaleRecords(updatedSaleRecords)
                         database.voiceNoteDao().insertVoiceNotes(appData.voiceNotes)
-                        appData.pendingProducts.forEach { database.pendingProductDao().insert(it) }
-                        appData.pendingHistory.forEach { database.pendingHistoryDao().insert(it) }
-                        appData.ideaRecords.forEach { database.ideaRecordDao().insert(it) }
-                        appData.ideaHistory.forEach { database.ideaHistoryDao().insert(it) }
+                        updatedPendingProducts.forEach { database.pendingProductDao().insert(it) }
+                        updatedPendingHistory.forEach { database.pendingHistoryDao().insert(it) }
+                        updatedIdeaRecords.forEach { database.ideaRecordDao().insert(it) }
+                        updatedIdeaHistory.forEach { database.ideaHistoryDao().insert(it) }
                         
                         return@withContext true
                     } catch (e: Exception) {
@@ -262,6 +371,36 @@ class DataTransferManager(private val context: Context) {
                 totalSize += jsonData.size
                 zip.closeEntry()
 
+                // 写入商品图片
+                appData.products.forEach { product ->
+                    product.imageUrl?.let { imageUrl ->
+                        if (!imageUrl.startsWith("http")) {  // 只处理本地图片
+                            val imageFile = File(imageUrl)
+                            if (imageFile.exists()) {
+                                zip.putNextEntry(ZipEntry("sales_images/${imageFile.name}"))
+                                imageFile.inputStream().use { it.copyTo(zip) }
+                                totalSize += imageFile.length()
+                                zip.closeEntry()
+                            }
+                        }
+                    }
+                }
+
+                // 写入售出商品图片
+                appData.saleRecords.forEach { saleRecord ->
+                    saleRecord.imageUrl?.let { imageUrl ->
+                        if (!imageUrl.startsWith("http")) {  // 只处理本地图片
+                            val imageFile = File(imageUrl)
+                            if (imageFile.exists()) {
+                                zip.putNextEntry(ZipEntry("sales_images/${imageFile.name}"))
+                                imageFile.inputStream().use { it.copyTo(zip) }
+                                totalSize += imageFile.length()
+                                zip.closeEntry()
+                            }
+                        }
+                    }
+                }
+
                 // 写入录音文件
                 appData.voiceNotes.forEach { voiceNote ->
                     val voiceFile = File(voiceNote.filePath)
@@ -276,12 +415,29 @@ class DataTransferManager(private val context: Context) {
                 // 写入待打印图片
                 appData.pendingProducts.forEach { pendingProduct ->
                     pendingProduct.imageUrl?.let { imageUrl ->
-                        val imageFile = File(imageUrl)
-                        if (imageFile.exists()) {
-                            zip.putNextEntry(ZipEntry("pending_images/${imageFile.name}"))
-                            imageFile.inputStream().use { it.copyTo(zip) }
-                            totalSize += imageFile.length()
-                            zip.closeEntry()
+                        if (!imageUrl.startsWith("http")) {
+                            val imageFile = File(imageUrl)
+                            if (imageFile.exists()) {
+                                zip.putNextEntry(ZipEntry("pending_images/${imageFile.name}"))
+                                imageFile.inputStream().use { it.copyTo(zip) }
+                                totalSize += imageFile.length()
+                                zip.closeEntry()
+                            }
+                        }
+                    }
+                }
+
+                // 写入待打印历史记录图片
+                appData.pendingHistory.forEach { pendingHistory ->
+                    pendingHistory.imageUrl?.let { imageUrl ->
+                        if (!imageUrl.startsWith("http")) {
+                            val imageFile = File(imageUrl)
+                            if (imageFile.exists()) {
+                                zip.putNextEntry(ZipEntry("pending_images/${imageFile.name}"))
+                                imageFile.inputStream().use { it.copyTo(zip) }
+                                totalSize += imageFile.length()
+                                zip.closeEntry()
+                            }
                         }
                     }
                 }
@@ -289,12 +445,29 @@ class DataTransferManager(private val context: Context) {
                 // 写入创意图片
                 appData.ideaRecords.forEach { ideaRecord ->
                     ideaRecord.imageUrl?.let { imageUrl ->
-                        val imageFile = File(imageUrl)
-                        if (imageFile.exists()) {
-                            zip.putNextEntry(ZipEntry("idea_images/${imageFile.name}"))
-                            imageFile.inputStream().use { it.copyTo(zip) }
-                            totalSize += imageFile.length()
-                            zip.closeEntry()
+                        if (!imageUrl.startsWith("http")) {
+                            val imageFile = File(imageUrl)
+                            if (imageFile.exists()) {
+                                zip.putNextEntry(ZipEntry("idea_images/${imageFile.name}"))
+                                imageFile.inputStream().use { it.copyTo(zip) }
+                                totalSize += imageFile.length()
+                                zip.closeEntry()
+                            }
+                        }
+                    }
+                }
+
+                // 写入创意历史记录图片
+                appData.ideaHistory.forEach { ideaHistory ->
+                    ideaHistory.imageUrl?.let { imageUrl ->
+                        if (!imageUrl.startsWith("http")) {
+                            val imageFile = File(imageUrl)
+                            if (imageFile.exists()) {
+                                zip.putNextEntry(ZipEntry("idea_images/${imageFile.name}"))
+                                imageFile.inputStream().use { it.copyTo(zip) }
+                                totalSize += imageFile.length()
+                                zip.closeEntry()
+                            }
                         }
                     }
                 }

@@ -28,9 +28,9 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             productDao.getAllProducts().collect { products ->
                 _products.value = if (isAscending) {
-                    products.sortedBy { it.createdAt }
+                    products.sortedBy { it.id }
                 } else {
-                    products.sortedByDescending { it.createdAt }
+                    products.sortedByDescending { it.id }
                 }
             }
         }
@@ -39,9 +39,9 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
     fun toggleSort() {
         isAscending = !isAscending
         _products.value = if (isAscending) {
-            _products.value.sortedBy { it.createdAt }
+            _products.value.sortedBy { it.id }
         } else {
-            _products.value.sortedByDescending { it.createdAt }
+            _products.value.sortedByDescending { it.id }
         }
     }
 

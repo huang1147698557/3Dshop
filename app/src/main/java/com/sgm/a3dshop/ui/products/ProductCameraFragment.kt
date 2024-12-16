@@ -140,6 +140,7 @@ class ProductCameraFragment : Fragment() {
         val name = binding.etName.text.toString()
         val weightStr = binding.etWeight.text.toString()
         val printTimeStr = binding.etPrintTime.text.toString()
+        val priceStr = binding.etPrice.text.toString()
         val laborCostStr = binding.etLaborCost.text.toString()
         val plateCountStr = binding.etPlateCount.text.toString()
         val materialUnitPriceStr = binding.etMaterialUnitPrice.text.toString()
@@ -149,6 +150,7 @@ class ProductCameraFragment : Fragment() {
 
         Log.d("ProductDB_Debug", "保存产品前的数据验证:")
         Log.d("ProductDB_Debug", "- 数量字符串: $quantityStr")
+        Log.d("ProductDB_Debug", "- 售价字符串: $priceStr")
 
         // Validate inputs
         if (name.isBlank()) {
@@ -158,7 +160,9 @@ class ProductCameraFragment : Fragment() {
 
         // Parse values
         val weight = weightStr.toFloatOrNull() ?: 0f
-        val printTime = (printTimeStr.toFloatOrNull() ?: 0f).toInt()
+        val printTimeHours = printTimeStr.toFloatOrNull() ?: 0f
+        val printTime = (printTimeHours * 60).toInt()
+        val price = priceStr.toDoubleOrNull() ?: 0.0
         val laborCost = laborCostStr.toDoubleOrNull() ?: 0.0
         val plateCount = plateCountStr.toIntOrNull() ?: 1
         val materialUnitPrice = materialUnitPriceStr.toDoubleOrNull() ?: 0.0
@@ -166,12 +170,15 @@ class ProductCameraFragment : Fragment() {
         val quantity = quantityStr.toIntOrNull() ?: 1
 
         Log.d("ProductDB_Debug", "解析后的数值:")
+        Log.d("ProductDB_Debug", "- 打印时间(小时): $printTimeHours")
+        Log.d("ProductDB_Debug", "- 打印时间(分钟): $printTime")
+        Log.d("ProductDB_Debug", "- 售价: $price")
         Log.d("ProductDB_Debug", "- 数量: $quantity")
 
         // Build description
         val description = buildString {
             append("重量: ${weight}g\n")
-            append("打印时间: ${String.format("%.2f", printTime / 60.0)}小时\n")
+            append("打印时间: ${String.format("%.2f", printTimeHours)}小时\n")
             append("人工费: ¥${laborCost}\n")
             append("盘数: $plateCount\n")
             append("耗材单价: ¥${materialUnitPrice}/kg\n")
@@ -188,7 +195,7 @@ class ProductCameraFragment : Fragment() {
         val product = Product(
             name = name,
             description = description,
-            price = 0.0, // Will be calculated later
+            price = price,
             imageUrl = currentPhotoPath,
             weight = weight,
             printTime = printTime,
@@ -201,6 +208,7 @@ class ProductCameraFragment : Fragment() {
 
         Log.d("ProductDB_Debug", "创建的Product对象:")
         Log.d("ProductDB_Debug", "- 数量: ${product.quantity}")
+        Log.d("ProductDB_Debug", "- 售价: ${product.price}")
 
         setFragmentResult(
             "product_key",

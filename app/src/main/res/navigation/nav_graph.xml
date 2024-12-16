@@ -14,11 +14,8 @@
             android:id="@+id/action_products_to_detail"
             app:destination="@id/navigation_product_detail" />
         <action
-            android:id="@+id/action_products_to_camera"
-            app:destination="@id/product_camera_fragment" />
-        <action
             android:id="@+id/action_products_to_add"
-            app:destination="@id/product_add_fragment" />
+            app:destination="@id/product_camera_fragment" />
     </fragment>
 
     <fragment
@@ -32,14 +29,10 @@
     </fragment>
 
     <fragment
-        android:id="@+id/product_add_fragment"
-        android:name="com.sgm.a3dshop.ui.products.ProductAddFragment"
+        android:id="@+id/product_camera_fragment"
+        android:name="com.sgm.a3dshop.ui.products.ProductCameraFragment"
         android:label="添加商品"
-        tools:layout="@layout/fragment_product_add">
-        <action
-            android:id="@+id/action_add_to_camera"
-            app:destination="@id/product_camera_fragment" />
-    </fragment>
+        tools:layout="@layout/fragment_product_camera" />
 
     <fragment
         android:id="@+id/navigation_sales"
@@ -168,11 +161,5 @@
             android:name="ideaId"
             app:argType="long" />
     </fragment>
-
-    <fragment
-        android:id="@+id/product_camera_fragment"
-        android:name="com.sgm.a3dshop.ui.products.ProductCameraFragment"
-        android:label="拍照"
-        tools:layout="@layout/fragment_product_camera" />
 
 </navigation>

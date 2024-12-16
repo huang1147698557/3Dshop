@@ -2,13 +2,18 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/action_sort"
-        android:icon="@drawable/ic_sort_arrow"
+        android:id="@+id/menu_sort"
+        android:icon="@drawable/ic_sort"
         android:title="排序"
         app:showAsAction="always" />
     <item
-        android:id="@+id/action_export_csv"
+        android:id="@+id/menu_export"
         android:icon="@drawable/ic_save"
-        android:title="导出CSV"
-        app:showAsAction="ifRoom" />
+        android:title="导出"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/menu_import"
+        android:icon="@drawable/ic_import"
+        android:title="导入"
+        app:showAsAction="always" />
 </menu> 
