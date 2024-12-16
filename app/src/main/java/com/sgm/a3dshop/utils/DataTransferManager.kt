@@ -65,7 +65,7 @@ class DataTransferManager(private val context: Context) {
                         continue
                     }
                 }
-                // 如果所有格式都失败了记录错误并返回当前时间
+                // 如果所有格式都失败了��录错误并返回当前时间
                 println("Failed to parse date: $dateStr")
                 return Date()
             }
@@ -96,7 +96,7 @@ class DataTransferManager(private val context: Context) {
                 ideaHistory = database.ideaHistoryDao().getAllByDeletedAtDesc().first()
             )
 
-            // 创建导出目录
+            // 创建导出目���
             val exportDir = File(context.getExternalFilesDir(null), "export")
             exportDir.mkdirs()
 
@@ -122,6 +122,36 @@ class DataTransferManager(private val context: Context) {
                             totalSize += voiceFile.length()
                         }
                         zip.closeEntry()
+                    }
+                }
+
+                // 复制商品图片
+                appData.products.forEach { product ->
+                    product.imageUrl?.let { imageUrl ->
+                        if (!imageUrl.startsWith("http")) {
+                            val imageFile = File(imageUrl)
+                            if (imageFile.exists()) {
+                                zip.putNextEntry(ZipEntry("sales_images/${imageFile.name}"))
+                                imageFile.inputStream().use { it.copyTo(zip) }
+                                totalSize += imageFile.length()
+                                zip.closeEntry()
+                            }
+                        }
+                    }
+                }
+
+                // 复制售出商品图片
+                appData.saleRecords.forEach { saleRecord ->
+                    saleRecord.imageUrl?.let { imageUrl ->
+                        if (!imageUrl.startsWith("http")) {
+                            val imageFile = File(imageUrl)
+                            if (imageFile.exists()) {
+                                zip.putNextEntry(ZipEntry("sales_images/${imageFile.name}"))
+                                imageFile.inputStream().use { it.copyTo(zip) }
+                                totalSize += imageFile.length()
+                                zip.closeEntry()
+                            }
+                        }
                     }
                 }
 
@@ -213,7 +243,7 @@ class DataTransferManager(private val context: Context) {
                             }
                         }
                         entry.name.startsWith("sales_images/") -> {
-                            val imageDir = File(context.getExternalFilesDir(null), "3DShop_Images")
+                            val imageDir = File(context.getExternalFilesDir(null), "sales_images")
                             imageDir.mkdirs()
                             val imageFile = File(imageDir, entry.name.substringAfter("sales_images/"))
                             imageFile.outputStream().use { output ->
@@ -374,7 +404,7 @@ class DataTransferManager(private val context: Context) {
                 // 写入商品图片
                 appData.products.forEach { product ->
                     product.imageUrl?.let { imageUrl ->
-                        if (!imageUrl.startsWith("http")) {  // 只处理本地图片
+                        if (!imageUrl.startsWith("http")) {
                             val imageFile = File(imageUrl)
                             if (imageFile.exists()) {
                                 zip.putNextEntry(ZipEntry("sales_images/${imageFile.name}"))
@@ -389,7 +419,7 @@ class DataTransferManager(private val context: Context) {
                 // 写入售出商品图片
                 appData.saleRecords.forEach { saleRecord ->
                     saleRecord.imageUrl?.let { imageUrl ->
-                        if (!imageUrl.startsWith("http")) {  // 只处理本地图片
+                        if (!imageUrl.startsWith("http")) {
                             val imageFile = File(imageUrl)
                             if (imageFile.exists()) {
                                 zip.putNextEntry(ZipEntry("sales_images/${imageFile.name}"))
