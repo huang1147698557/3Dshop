@@ -82,8 +82,10 @@ class ProductDetailFragment : Fragment() {
                 // 显示计算结果
                 val unitCost = it.calculateUnitCost()
                 val expectedPrice = it.calculateExpectedPrice()
+                val profit = it.calculateProfit()
                 binding.tvUnitCost.text = String.format("单个成本: ¥%.2f", unitCost)
                 binding.tvExpectedPrice.text = String.format("预计售价: ¥%.2f", expectedPrice)
+                binding.tvProfit.text = String.format("利润: ¥%.2f", profit)
 
                 // 显示备注
                 binding.tvNote.text = it.description?.substringAfter("备注: ") ?: "无"

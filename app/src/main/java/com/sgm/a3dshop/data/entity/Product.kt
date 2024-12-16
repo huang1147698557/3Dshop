@@ -73,6 +73,20 @@ data class Product(
         Log.d(TAG, "- 总预计售价: ${costPart + timePart}元")
         return costPart + timePart
     }
+
+    // 计算利润
+    fun calculateProfit(): Double {
+        val unitCost = calculateUnitCost()
+        val price = price  // 使用实际售价
+        val profit = price - unitCost
+        
+        Log.d(TAG, "计算利润:")
+        Log.d(TAG, "- 实际售价: ${price}元")
+        Log.d(TAG, "- 单个成本: ${unitCost}元")
+        Log.d(TAG, "- 利润: ${profit}元")
+        
+        return profit
+    }
 }
 
 object DateParceler : Parceler<Date> {
