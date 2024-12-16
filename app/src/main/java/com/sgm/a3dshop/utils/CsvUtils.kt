@@ -1,3 +1,5 @@
+package com.sgm.a3dshop.utils
+
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -88,8 +90,8 @@ object CsvUtils {
                                 laborCost = laborCost,
                                 plateCount = batchSize,
                                 materialUnitPrice = materialPrice,
-                                quantity = quantity
-
+                                quantity = quantity,
+                                postProcessingCost = postProcessingCost
                             )
                             products.add(product)
                             Log.d("CsvUtils", "Added product: ${product.name} with URL: ${product.quantity}")
@@ -139,24 +141,27 @@ object CsvUtils {
 
                 // 写入数据行
                 products.forEach { product ->
-                    // 解析描述中的数据
-                    val descriptionMap = parseDescription(product.description ?: "")
+                    val printTimeHours = product.printTime / 60.0 // 将分钟转换为小时
+                    val singleTime = if (product.quantity > 0) printTimeHours / product.quantity else 0.0
+                    val unitCost = product.calculateUnitCost()
+                    val expectedPrice = product.calculateExpectedPrice()
+                    val profit = product.calculateProfit()
                     
                     writer.writeNext(arrayOf(
                         product.name,
                         product.imageUrl ?: "",
-                        descriptionMap["modelWeight"] ?: "0",
-                        descriptionMap["printTime"] ?: "0",
-                        descriptionMap["materialPrice"] ?: "0",
-                        descriptionMap["postProcessingCost"] ?: "0",
-                        descriptionMap["laborCost"] ?: "0",
-                        descriptionMap["quantity"] ?: "0",
-                        descriptionMap["batchSize"] ?: "1",
-                        descriptionMap["singleTime"] ?: "0",
-                        descriptionMap["singleCost"] ?: "0",
-                        descriptionMap["estimatedPrice"] ?: "0",
-                        product.price.toString(),
-                        descriptionMap["profit"] ?: "0"
+                        df.format(product.weight),
+                        df.format(printTimeHours),
+                        df.format(product.materialUnitPrice),
+                        df.format(product.postProcessingCost),
+                        df.format(product.laborCost),
+                        product.quantity.toString(),
+                        product.plateCount.toString(),
+                        df.format(singleTime),
+                        df.format(unitCost),
+                        df.format(expectedPrice),
+                        df.format(product.price),
+                        df.format(profit)
                     ))
                 }
 
@@ -168,26 +173,6 @@ object CsvUtils {
         }
     }
 
-    private fun parseDescription(description: String): Map<String, String> {
-        val result = mutableMapOf<String, String>()
-        description.lines().forEach { line ->
-            when {
-                line.startsWith("模型克数:") -> result["modelWeight"] = extractNumber(line)
-                line.startsWith("打印时间:") -> result["printTime"] = extractNumber(line)
-                line.startsWith("耗材价格:") -> result["materialPrice"] = extractNumber(line)
-                line.startsWith("后处理成本:") -> result["postProcessingCost"] = extractNumber(line)
-                line.startsWith("人工费:") -> result["laborCost"] = extractNumber(line)
-                line.startsWith("数量:") -> result["quantity"] = extractNumber(line)
-                line.startsWith("盘数:") -> result["batchSize"] = extractNumber(line)
-                line.startsWith("单个耗时:") -> result["singleTime"] = extractNumber(line)
-                line.startsWith("单个成本:") -> result["singleCost"] = extractNumber(line)
-                line.startsWith("预计售价:") -> result["estimatedPrice"] = extractNumber(line)
-                line.startsWith("利润:") -> result["profit"] = extractNumber(line)
-            }
-        }
-        return result
-    }
-
     private fun extractNumber(line: String): String {
         return line.substringAfter(":")
             .replace("¥", "")
@@ -195,15 +180,5 @@ object CsvUtils {
             .replace("h", "")
             .replace("/kg", "")
             .trim()
-    }
-
-    private fun processImageUrl(url: String?): String? {
-        return url?.let {
-            if (it.startsWith("http:/")) {
-                "https://" + it.substring(6)
-            } else {
-                it
-            }
-        }
     }
 }
