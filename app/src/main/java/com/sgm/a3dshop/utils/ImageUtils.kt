@@ -22,6 +22,7 @@ object ImageUtils {
     const val DIR_PENDING = "pending_images"
     const val DIR_IDEAS = "idea_images"
     const val DIR_SALES = "sales_images"
+    const val DIR_PRODUCTS = "product_images"
 
     internal fun getUserSpecificDir(context: Context, type: String): File {
         val userId = context.packageName + "_" + context.getSystemService(Context.USER_SERVICE).hashCode()

@@ -25,6 +25,8 @@ import com.sgm.a3dshop.data.entity.Product
 import com.sgm.a3dshop.databinding.FragmentProductEditBinding
 import com.sgm.a3dshop.utils.ImageUtils
 import java.io.File
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class ProductEditFragment : Fragment() {
     private var _binding: FragmentProductEditBinding? = null
@@ -35,17 +37,34 @@ class ProductEditFragment : Fragment() {
     private val args: ProductEditFragmentArgs by navArgs()
     private var currentPhotoPath: String? = null
     private var imageCapture: ImageCapture? = null
+    private lateinit var cameraExecutor: ExecutorService
+    private var preview: Preview? = null
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            startCamera()
+        } else {
+            Toast.makeText(requireContext(), "需要相机权限才能拍照", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     private val pickImage = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             result.data?.data?.let { uri ->
-                val compressedPath = ImageUtils.compressImage(requireContext(), uri, ImageUtils.DIR_SALES)
+                val compressedPath = ImageUtils.compressImage(requireContext(), uri, ImageUtils.DIR_PRODUCTS)
                 compressedPath?.let { path ->
                     currentPhotoPath = path
                     showPhoto(path)
                 }
             }
         }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
     override fun onCreateView(
@@ -77,9 +96,66 @@ class ProductEditFragment : Fragment() {
 
     private fun setupImageButtons() {
         binding.apply {
-            fabCamera.setOnClickListener { takePhoto() }
+            fabCamera.setOnClickListener { checkCameraPermissionAndStart() }
             fabGallery.setOnClickListener { openGallery() }
         }
+    }
+
+    private fun checkCameraPermissionAndStart() {
+        when {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                startCamera()
+            }
+            shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
+                Toast.makeText(requireContext(), "需要相机权限才能拍照", Toast.LENGTH_SHORT).show()
+            }
+            else -> {
+                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+        }
+    }
+
+    private fun startCamera() {
+        binding.viewFinder.visibility = View.VISIBLE
+        binding.productImage.visibility = View.GONE
+        binding.fabTakePhoto.visibility = View.VISIBLE
+        binding.fabCamera.visibility = View.GONE
+        binding.fabGallery.visibility = View.GONE
+
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
+
+        cameraProviderFuture.addListener({
+            val cameraProvider = cameraProviderFuture.get()
+
+            preview = Preview.Builder().build()
+            preview?.setSurfaceProvider(binding.viewFinder.surfaceProvider)
+
+            imageCapture = ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .build()
+
+            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+            try {
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
+                    viewLifecycleOwner,
+                    cameraSelector,
+                    preview,
+                    imageCapture
+                )
+                
+                // 设置拍照按钮点击监听
+                binding.fabTakePhoto.setOnClickListener {
+                    takePhoto()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "相机启动失败", Toast.LENGTH_SHORT).show()
+            }
+        }, ContextCompat.getMainExecutor(requireContext()))
     }
 
     private fun openGallery() {
@@ -88,7 +164,7 @@ class ProductEditFragment : Fragment() {
     }
 
     private fun takePhoto() {
-        val photoFile = ImageUtils.createImageFile(requireContext(), ImageUtils.DIR_SALES)
+        val photoFile = ImageUtils.createImageFile(requireContext(), ImageUtils.DIR_PRODUCTS)
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
         imageCapture?.takePicture(
@@ -97,9 +173,14 @@ class ProductEditFragment : Fragment() {
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     val savedUri = Uri.fromFile(photoFile)
-                    val compressedPath = ImageUtils.compressImage(requireContext(), savedUri, ImageUtils.DIR_SALES)
+                    val compressedPath = ImageUtils.compressImage(requireContext(), savedUri, ImageUtils.DIR_PRODUCTS)
                     if (compressedPath != null) {
                         currentPhotoPath = compressedPath
+                        binding.viewFinder.visibility = View.GONE
+                        binding.productImage.visibility = View.VISIBLE
+                        binding.fabTakePhoto.visibility = View.GONE
+                        binding.fabCamera.visibility = View.VISIBLE
+                        binding.fabGallery.visibility = View.VISIBLE
                         showPhoto(compressedPath)
                     } else {
                         Toast.makeText(requireContext(), "保存图片失败", Toast.LENGTH_SHORT).show()
@@ -227,5 +308,8 @@ class ProductEditFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+        if (::cameraExecutor.isInitialized) {
+            cameraExecutor.shutdown()
+        }
     }
 } 

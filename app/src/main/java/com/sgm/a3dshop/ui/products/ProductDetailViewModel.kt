@@ -29,19 +29,28 @@ class ProductDetailViewModel(
 
     private fun loadProduct() {
         viewModelScope.launch {
-            val loadedProduct = productDao.getProductById(productId.toInt())
-            Log.d(TAG, "从数据库加载产品数据:")
-            Log.d(TAG, "- ID: ${loadedProduct.id}")
-            Log.d(TAG, "- 名称: ${loadedProduct.name}")
-            Log.d(TAG, "- 重量: ${loadedProduct.weight}g")
-            Log.d(TAG, "- 打印时间: ${loadedProduct.printTime}分钟")
-            Log.d(TAG, "- 人工费: ${loadedProduct.laborCost}元")
-            Log.d(TAG, "- 盘数: ${loadedProduct.plateCount}")
-            Log.d(TAG, "- 耗材单价: ${loadedProduct.materialUnitPrice}元/kg")
-            Log.d(TAG, "- 后处理费: ${loadedProduct.postProcessingCost}元")
-            Log.d(TAG, "- 数量: ${loadedProduct.quantity}")
-            Log.d(TAG, "- 描述: ${loadedProduct.description}")
-            _product.value = loadedProduct
+            try {
+                val loadedProduct = productDao.getProductById(productId.toInt())
+                _product.value = loadedProduct
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading product: ${e.message}")
+            }
+        }
+    }
+
+    fun updateImage(imagePath: String) {
+        viewModelScope.launch {
+            try {
+                _product.value?.let { currentProduct ->
+                    val updatedProduct = currentProduct.copy(
+                        imageUrl = imagePath
+                    )
+                    productDao.updateProduct(updatedProduct)
+                    _product.value = updatedProduct
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating product image: ${e.message}")
+            }
         }
     }
 }
