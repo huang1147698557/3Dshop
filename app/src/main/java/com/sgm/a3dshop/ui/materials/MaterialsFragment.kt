@@ -92,6 +92,14 @@ class MaterialsFragment : Fragment() {
         viewModel.materials.observe(viewLifecycleOwner) { materials ->
             adapter.submitList(materials)
             binding.emptyView.visibility = if (materials.isEmpty()) View.VISIBLE else View.GONE
+            
+            // 计算耗材总数量（所有耗材数量之和）
+            val totalQuantity = materials.sumOf { it.quantity }
+            // 耗材种类数量就是 materials 的大小
+            val materialTypes = materials.size
+            
+            // 更新标题栏显示耗材种类数和总数量
+            binding.toolbar.title = "耗材管理 ($materialTypes/$totalQuantity)"
         }
 
         viewModel.sortByRemaining.observe(viewLifecycleOwner) { isSortingByRemaining ->
