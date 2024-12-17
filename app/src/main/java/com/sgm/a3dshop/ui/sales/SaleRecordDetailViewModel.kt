@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.sgm.a3dshop.data.AppDatabase
 import com.sgm.a3dshop.data.entity.SaleRecord
 import kotlinx.coroutines.launch
+import java.util.*
 
 class SaleRecordDetailViewModel(
     application: Application,
@@ -37,6 +38,18 @@ class SaleRecordDetailViewModel(
                     name = name,
                     salePrice = price,
                     note = note
+                )
+                saleRecordDao.updateSaleRecord(updatedRecord)
+                _saleRecord.value = updatedRecord
+            }
+        }
+    }
+
+    fun updateDateTime(dateTime: Date) {
+        viewModelScope.launch {
+            _saleRecord.value?.let { record ->
+                val updatedRecord = record.copy(
+                    createdAt = dateTime
                 )
                 saleRecordDao.updateSaleRecord(updatedRecord)
                 _saleRecord.value = updatedRecord

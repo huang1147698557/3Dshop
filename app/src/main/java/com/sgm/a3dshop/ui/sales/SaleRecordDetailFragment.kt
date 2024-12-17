@@ -1,12 +1,12 @@
 package com.sgm.a3dshop.ui.sales
 
 import android.app.Activity
-import android.content.ContentValues.TAG
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -97,6 +97,44 @@ class SaleRecordDetailFragment : Fragment() {
             fabSave.setOnClickListener {
                 saveSaleRecord()
             }
+
+            layoutDateTime.setOnClickListener {
+                showDateTimePicker()
+            }
+        }
+    }
+
+    private fun showDateTimePicker() {
+        viewModel.saleRecord.value?.let { record ->
+            val calendar = Calendar.getInstance().apply {
+                time = record.createdAt
+            }
+
+            val datePickerDialog = DatePickerDialog(
+                requireContext(),
+                { _, year, month, dayOfMonth ->
+                    calendar.set(Calendar.YEAR, year)
+                    calendar.set(Calendar.MONTH, month)
+                    calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+
+                    TimePickerDialog(
+                        requireContext(),
+                        { _, hourOfDay, minute ->
+                            calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                            calendar.set(Calendar.MINUTE, minute)
+                            calendar.set(Calendar.SECOND, 0)
+                            viewModel.updateDateTime(calendar.time)
+                        },
+                        calendar.get(Calendar.HOUR_OF_DAY),
+                        calendar.get(Calendar.MINUTE),
+                        true
+                    ).show()
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+            )
+            datePickerDialog.show()
         }
     }
 
@@ -131,7 +169,6 @@ class SaleRecordDetailFragment : Fragment() {
             }
             takePicture.launch(intent)
         } catch (e: Exception) {
-            Log.e(TAG, "Error creating photo URI", e)
             Toast.makeText(requireContext(), "创建照片文件失败", Toast.LENGTH_SHORT).show()
         }
     }
@@ -139,35 +176,6 @@ class SaleRecordDetailFragment : Fragment() {
     private fun pickImageFromGallery() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         pickImage.launch(intent)
-    }
-
-    private fun observeData() {
-        viewModel.saleRecord.observe(viewLifecycleOwner) { saleRecord ->
-            saleRecord?.let {
-                binding.apply {
-                    etName.setText(it.name)
-                    etPrice.setText(String.format("%.2f", it.salePrice))
-                    tvSaleTime.text = dateFormat.format(it.createdAt)
-                    etNote.setText(it.note ?: "")
-                    
-                    // 加载商品图片
-                    it.imageUrl?.let { imageUrl ->
-                        val imageSource = if (imageUrl.startsWith("/")) {
-                            File(imageUrl)
-                        } else {
-                            imageUrl
-                        }
-                        
-                        Glide.with(ivProduct)
-                            .load(imageSource)
-                            .placeholder(R.drawable.placeholder_image)
-                            .error(R.drawable.error_image)
-                            .centerCrop()
-                            .into(ivProduct)
-                    }
-                }
-            }
-        }
     }
 
     private fun saveSaleRecord() {
@@ -195,6 +203,35 @@ class SaleRecordDetailFragment : Fragment() {
         viewModel.updateSaleRecord(name, price, note)
         Toast.makeText(context, "保存成功", Toast.LENGTH_SHORT).show()
         findNavController().navigateUp()
+    }
+
+    private fun observeData() {
+        viewModel.saleRecord.observe(viewLifecycleOwner) { saleRecord ->
+            saleRecord?.let {
+                binding.apply {
+                    etName.setText(it.name)
+                    etPrice.setText(String.format("%.2f", it.salePrice))
+                    tvSaleTime.text = dateFormat.format(it.createdAt)
+                    etNote.setText(it.note ?: "")
+                    
+                    // 加载商品图片
+                    it.imageUrl?.let { imageUrl ->
+                        val imageSource = if (imageUrl.startsWith("/")) {
+                            File(imageUrl)
+                        } else {
+                            imageUrl
+                        }
+                        
+                        Glide.with(ivProduct)
+                            .load(imageSource)
+                            .placeholder(R.drawable.ic_image_placeholder)
+                            .error(R.drawable.ic_image_error)
+                            .centerCrop()
+                            .into(ivProduct)
+                    }
+                }
+            }
+        }
     }
 
     override fun onDestroyView() {
