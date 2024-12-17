@@ -27,10 +27,29 @@ class PendingDetailViewModel(
         }
     }
 
-    fun updatePendingProduct(pendingProduct: PendingProduct) {
+    fun updatePendingProduct(name: String, price: Double, note: String?) {
         viewModelScope.launch {
-            pendingProductDao.update(pendingProduct)
-            _pendingProduct.value = pendingProduct
+            _pendingProduct.value?.let { currentProduct ->
+                val updatedProduct = currentProduct.copy(
+                    name = name,
+                    salePrice = price,
+                    note = note
+                )
+                pendingProductDao.update(updatedProduct)
+                _pendingProduct.value = updatedProduct
+            }
+        }
+    }
+
+    fun updateImage(imagePath: String) {
+        viewModelScope.launch {
+            _pendingProduct.value?.let { currentProduct ->
+                val updatedProduct = currentProduct.copy(
+                    imageUrl = imagePath
+                )
+                pendingProductDao.update(updatedProduct)
+                _pendingProduct.value = updatedProduct
+            }
         }
     }
 }

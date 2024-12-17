@@ -27,10 +27,28 @@ class IdeaDetailViewModel(
         }
     }
 
-    fun updateIdeaRecord(ideaRecord: IdeaRecord) {
+    fun updateIdeaRecord(name: String, note: String?) {
         viewModelScope.launch {
-            ideaRecordDao.update(ideaRecord)
-            _ideaRecord.value = ideaRecord
+            _ideaRecord.value?.let { currentRecord ->
+                val updatedRecord = currentRecord.copy(
+                    name = name,
+                    note = note
+                )
+                ideaRecordDao.update(updatedRecord)
+                _ideaRecord.value = updatedRecord
+            }
+        }
+    }
+
+    fun updateImage(imagePath: String) {
+        viewModelScope.launch {
+            _ideaRecord.value?.let { currentRecord ->
+                val updatedRecord = currentRecord.copy(
+                    imageUrl = imagePath
+                )
+                ideaRecordDao.update(updatedRecord)
+                _ideaRecord.value = updatedRecord
+            }
         }
     }
 }
