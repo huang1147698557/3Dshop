@@ -94,6 +94,7 @@ class MaterialAdapter(
         fun bind(material: Material) {
             binding.apply {
                 tvName.text = material.name
+                tvMaterial.text = "材质：${material.material}"
                 tvColor.text = material.color?.let { "颜色：$it" } ?: "颜色：未设置"
                 tvPrice.text = "价格：${NumberFormat.getCurrencyInstance(Locale.CHINA).format(material.price)}"
                 quantityController.etQuantity.setText(material.quantity.toString())
@@ -122,6 +123,8 @@ class MaterialAdapter(
                 // 设置文字颜色
                 val context = root.context
                 tvName.setTextColor(ContextCompat.getColor(context, 
+                    if (isQuantityZero) android.R.color.darker_gray else android.R.color.black))
+                tvMaterial.setTextColor(ContextCompat.getColor(context,
                     if (isQuantityZero) android.R.color.darker_gray else android.R.color.black))
                 tvPrice.setTextColor(ContextCompat.getColor(context, 
                     if (isQuantityZero) android.R.color.darker_gray else android.R.color.holo_red_light))
@@ -153,6 +156,7 @@ class MaterialDiffCallback : DiffUtil.ItemCallback<Material>() {
 
     override fun areContentsTheSame(oldItem: Material, newItem: Material): Boolean {
         return oldItem.name == newItem.name &&
+               oldItem.material == newItem.material &&
                oldItem.color == newItem.color &&
                oldItem.price == newItem.price &&
                oldItem.quantity == newItem.quantity &&

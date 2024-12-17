@@ -10,6 +10,8 @@ import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -82,7 +84,14 @@ class MaterialDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupViews()
+        setupMaterialSpinner()
         loadMaterial()
+    }
+
+    private fun setupMaterialSpinner() {
+        val materials = arrayOf(Material.MATERIAL_PLA, Material.MATERIAL_PETG)
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, materials.toList())
+        (binding.materialInput as? AutoCompleteTextView)?.setAdapter(adapter)
     }
 
     private fun setupViews() {
@@ -118,6 +127,7 @@ class MaterialDetailFragment : Fragment() {
                 currentMaterial = material
                 binding.apply {
                     nameInput.setText(material.name)
+                    materialInput.setText(material.material, false)
                     colorInput.setText(material.color ?: "")
                     priceInput.setText(material.price.toString())
                     quantityController.etQuantity.setText(material.quantity.toString())
@@ -199,6 +209,7 @@ class MaterialDetailFragment : Fragment() {
 
     private fun saveMaterial() {
         val name = binding.nameInput.text.toString()
+        val material = binding.materialInput.text.toString()
         val color = binding.colorInput.text.toString()
         val priceText = binding.priceInput.text.toString()
         val quantityText = binding.quantityController.etQuantity.text.toString()
@@ -206,6 +217,11 @@ class MaterialDetailFragment : Fragment() {
 
         if (name.isBlank()) {
             binding.nameLayout.error = "请输入耗材名称"
+            return
+        }
+
+        if (material !in arrayOf(Material.MATERIAL_PLA, Material.MATERIAL_PETG)) {
+            binding.materialLayout.error = "请选择有效的材质"
             return
         }
 
@@ -242,9 +258,10 @@ class MaterialDetailFragment : Fragment() {
             return
         }
 
-        currentMaterial?.let { material ->
-            val updatedMaterial = material.copy(
+        currentMaterial?.let { currentMaterial ->
+            val updatedMaterial = currentMaterial.copy(
                 name = name,
+                material = material,
                 color = color.takeIf { it.isNotBlank() },
                 price = price,
                 quantity = quantity,

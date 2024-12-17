@@ -22,7 +22,7 @@ import com.sgm.a3dshop.data.entity.*
         Material::class,
         InventoryLog::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -54,7 +54,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_3_4, 
                     MIGRATION_4_5, 
                     MIGRATION_5_6,
-                    MIGRATION_6_7
+                    MIGRATION_6_7,
+                    MIGRATION_7_8
                 )
                 .fallbackToDestructiveMigration()
                 .build()
@@ -144,6 +145,43 @@ abstract class AppDatabase : RoomDatabase() {
                         createdAt INTEGER NOT NULL
                     )
                 """)
+            }
+        }
+
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 创建临时表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS materials_temp (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        material TEXT NOT NULL DEFAULT 'PLA',
+                        color TEXT,
+                        price REAL NOT NULL,
+                        quantity INTEGER NOT NULL,
+                        remainingPercentage INTEGER NOT NULL,
+                        imageUrl TEXT,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                """)
+
+                // 复制数据到临时表
+                database.execSQL("""
+                    INSERT INTO materials_temp (
+                        id, name, color, price, quantity, remainingPercentage, 
+                        imageUrl, createdAt, updatedAt
+                    )
+                    SELECT id, name, color, price, quantity, remainingPercentage, 
+                           imageUrl, createdAt, updatedAt
+                    FROM materials
+                """)
+
+                // 删除旧表
+                database.execSQL("DROP TABLE materials")
+
+                // 重命名临时表为正式表
+                database.execSQL("ALTER TABLE materials_temp RENAME TO materials")
             }
         }
     }

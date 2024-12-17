@@ -10,6 +10,8 @@ import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -77,6 +79,23 @@ class MaterialAddFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupViews()
+        setupMaterialSpinner()
+        setDefaultValues()
+    }
+
+    private fun setupMaterialSpinner() {
+        val materials = arrayOf(Material.MATERIAL_PLA, Material.MATERIAL_PETG)
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, materials.toList())
+        (binding.materialInput as? AutoCompleteTextView)?.setAdapter(adapter)
+    }
+
+    private fun setDefaultValues() {
+        binding.apply {
+            materialInput.setText(Material.MATERIAL_PLA, false)
+            priceInput.setText(Material.DEFAULT_PRICE.toString())
+            quantityController.etQuantity.setText(Material.DEFAULT_QUANTITY.toString())
+            remainingInput.setText(Material.DEFAULT_REMAINING_PERCENTAGE.toString())
+        }
     }
 
     private fun setupViews() {
@@ -86,6 +105,18 @@ class MaterialAddFragment : Fragment() {
 
         binding.btnSelectImage.setOnClickListener {
             showImagePickerDialog()
+        }
+
+        binding.quantityController.btnMinus.setOnClickListener {
+            val currentQuantity = binding.quantityController.etQuantity.text.toString().toIntOrNull() ?: 0
+            if (currentQuantity > 0) {
+                binding.quantityController.etQuantity.setText((currentQuantity - 1).toString())
+            }
+        }
+
+        binding.quantityController.btnPlus.setOnClickListener {
+            val currentQuantity = binding.quantityController.etQuantity.text.toString().toIntOrNull() ?: 0
+            binding.quantityController.etQuantity.setText((currentQuantity + 1).toString())
         }
     }
 
@@ -157,13 +188,19 @@ class MaterialAddFragment : Fragment() {
 
     private fun saveMaterial() {
         val name = binding.nameInput.text.toString()
+        val material = binding.materialInput.text.toString()
         val color = binding.colorInput.text.toString()
         val priceText = binding.priceInput.text.toString()
-        val quantityText = binding.quantityInput.text.toString()
+        val quantityText = binding.quantityController.etQuantity.text.toString()
         val remainingText = binding.remainingInput.text.toString()
 
         if (name.isBlank()) {
             binding.nameLayout.error = "请输入耗材名称"
+            return
+        }
+
+        if (material !in arrayOf(Material.MATERIAL_PLA, Material.MATERIAL_PETG)) {
+            binding.materialLayout.error = "请选择有效的材质"
             return
         }
 
@@ -173,7 +210,7 @@ class MaterialAddFragment : Fragment() {
         }
 
         if (quantityText.isBlank()) {
-            binding.quantityLayout.error = "请输入数量"
+            Toast.makeText(requireContext(), "请输入数量", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -190,7 +227,7 @@ class MaterialAddFragment : Fragment() {
 
         val quantity = quantityText.toIntOrNull()
         if (quantity == null || quantity < 0) {
-            binding.quantityLayout.error = "请输入有效的数量"
+            Toast.makeText(requireContext(), "请输入有效的数量", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -201,9 +238,10 @@ class MaterialAddFragment : Fragment() {
         }
 
         val now = Date()
-        val material = Material(
+        val newMaterial = Material(
             id = 0, // Room会自动生成ID
             name = name,
+            material = material,
             color = color.takeIf { it.isNotBlank() },
             price = price,
             quantity = quantity,
@@ -213,7 +251,7 @@ class MaterialAddFragment : Fragment() {
             updatedAt = now
         )
 
-        viewModel.addMaterial(material)
+        viewModel.addMaterial(newMaterial)
         Toast.makeText(requireContext(), "保存成功", Toast.LENGTH_SHORT).show()
         findNavController().navigateUp()
     }
