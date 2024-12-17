@@ -97,7 +97,7 @@ class ProductsFragment : Fragment(), MenuProvider {
                     // 显示确认对话框
                     AlertDialog.Builder(requireContext())
                         .setTitle("确认删除")
-                        .setMessage("确定要删除商品\"${product.name}\"吗？")
+                        .setMessage("�����定要删除商品\"${product.name}\"吗？")
                         .setPositiveButton("删除") { _, _ ->
                             // 删除商品
                             viewModel.deleteProduct(product)
@@ -219,6 +219,14 @@ class ProductsFragment : Fragment(), MenuProvider {
             viewModel.products.collectLatest { products ->
                 productAdapter.submitList(products)
                 binding.emptyView.visibility = if (products.isEmpty()) View.VISIBLE else View.GONE
+                
+                // 计算商品总数量（所有商品剩余数量之和）
+                val totalQuantity = products.sumOf { it.remainingCount }
+                // 商品种类数量就是 products 的大小
+                val productTypes = products.size
+                
+                // 更新标题栏显示商品种类数和总数量
+                binding.toolbar.title = "商品列表 ($productTypes/$totalQuantity)"
             }
         }
     }
