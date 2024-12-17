@@ -6,7 +6,7 @@ import com.sgm.a3dshop.data.entity.Material
 
 @Dao
 interface MaterialDao {
-    @Query("SELECT * FROM materials ORDER BY createdAt DESC")
+    @Query("SELECT * FROM materials")
     fun getAllMaterials(): LiveData<List<Material>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
