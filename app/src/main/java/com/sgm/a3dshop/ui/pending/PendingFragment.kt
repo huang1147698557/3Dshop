@@ -196,6 +196,7 @@ class PendingFragment : Fragment() {
             viewModel.pendingProducts.collectLatest { products ->
                 adapter.submitList(products)
                 binding.tvEmpty?.visibility = if (products.isEmpty()) View.VISIBLE else View.GONE
+                binding.toolbar.title = "待打印 (${products.size})"
             }
         }
     }

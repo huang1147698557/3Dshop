@@ -167,6 +167,8 @@ class SalesFragment : Fragment(), MenuProvider {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.dailySales.collectLatest { dailySales ->
                 adapter.submitList(dailySales)
+                val totalRecords = dailySales.sumOf { it.records.size }
+                binding.toolbar.title = "销售记录 ($totalRecords)"
             }
         }
 

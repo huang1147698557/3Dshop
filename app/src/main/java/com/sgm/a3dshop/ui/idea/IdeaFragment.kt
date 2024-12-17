@@ -173,6 +173,7 @@ class IdeaFragment : Fragment() {
             viewModel.ideaRecords.collectLatest { records ->
                 adapter.submitList(records)
                 binding.tvEmpty.visibility = if (records.isEmpty()) View.VISIBLE else View.GONE
+                binding.toolbar.title = "创意记录 (${records.size})"
             }
         }
     }
