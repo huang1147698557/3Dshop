@@ -78,19 +78,6 @@ class ProfileFragment : Fragment() {
         binding.btnMaterials.setOnClickListener {
             findNavController().navigate(R.id.navigation_materials)
         }
-
-        // 设置其他按钮的点击事件
-        binding.btnRecord.setOnClickListener {
-            // 处理录音按钮点击
-        }
-
-        binding.btnExport.setOnClickListener {
-            // 处理导出数据按钮点击
-        }
-
-        binding.btnImport.setOnClickListener {
-            // 处理导入数据按钮点击
-        }
     }
 
     private fun setupViews() {
