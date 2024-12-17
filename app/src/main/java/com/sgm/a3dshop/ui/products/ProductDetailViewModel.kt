@@ -29,7 +29,7 @@ class ProductDetailViewModel(
 
     private fun loadProduct() {
         viewModelScope.launch {
-            val loadedProduct = productDao.getProductById(productId)
+            val loadedProduct = productDao.getProductById(productId.toInt())
             Log.d(TAG, "从数据库加载产品数据:")
             Log.d(TAG, "- ID: ${loadedProduct.id}")
             Log.d(TAG, "- 名称: ${loadedProduct.name}")

@@ -4,12 +4,14 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.sgm.a3dshop.data.entity.InventoryLog
 import com.sgm.a3dshop.data.entity.SaleRecord
 import com.sgm.a3dshop.databinding.FragmentProductSelectBinding
 import com.sgm.a3dshop.ui.products.ProductAdapter
@@ -26,15 +28,35 @@ class ProductSelectFragment : Fragment() {
 
     private val productAdapter = ProductAdapter(
         onItemClick = { product ->
-            // 创建销售记录并返回
-            val saleRecord = SaleRecord(
-                productId = product.id,
-                name = product.name,
-                salePrice = product.price,
-                imageUrl = product.imageUrl
-            )
-            viewModel.insertSaleRecord(saleRecord)
-            findNavController().navigateUp()
+            lifecycleScope.launch {
+                try {
+                    // 检查库存
+                    val remainingCount = viewModel.getProductRemainingCount(product.id)
+                    if (remainingCount <= 0) {
+                        Toast.makeText(context, "商品库存不足", Toast.LENGTH_SHORT).show()
+                        return@launch
+                    }
+
+                    // 创建销售记录
+                    val saleRecord = SaleRecord(
+                        productId = product.id,
+                        name = product.name,
+                        salePrice = product.price,
+                        imageUrl = product.imageUrl
+                    )
+
+                    // 更新库存并记录日志
+                    viewModel.createSaleRecordWithInventoryUpdate(
+                        saleRecord = saleRecord,
+                        beforeCount = remainingCount,
+                        afterCount = remainingCount - 1
+                    )
+
+                    findNavController().navigateUp()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "创建销售记录失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         },
         onQuantityChanged = { _, _ ->
             // 在销售选择界面，我们不需要处理数量变化

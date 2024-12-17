@@ -26,4 +26,12 @@ class ProductRepository(private val productDao: ProductDao) {
     suspend fun deleteAllProducts() {
         productDao.deleteAllProducts()
     }
+
+    suspend fun getProductRemainingCount(productId: Int): Int {
+        return productDao.getProductRemainingCount(productId)
+    }
+
+    suspend fun updateProductRemainingCount(productId: Int, newCount: Int) {
+        productDao.updateProductRemainingCount(productId, newCount)
+    }
 } 

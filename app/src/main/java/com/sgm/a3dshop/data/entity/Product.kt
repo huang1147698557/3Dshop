@@ -66,7 +66,7 @@ data class Product(
         val costPart = calculateUnitCost() * 7.5
         val timePart = totalTime/quantity * plateCount * 0.5
         Log.d(TAG, "计算预计售价:")
-        Log.d(TAG, "- 打印时间: ${totalTime}小时")
+        Log.d(TAG, "- 打���时间: ${totalTime}小时")
         Log.d(TAG, "- 盘数: ${plateCount}")
         Log.d(TAG, "- 数量: ${quantity}")
         Log.d(TAG, "- 成本部分: ${costPart}元")

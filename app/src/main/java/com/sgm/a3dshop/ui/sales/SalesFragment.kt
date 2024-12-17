@@ -2,7 +2,9 @@ package com.sgm.a3dshop.ui.sales
 
 import android.os.Bundle
 import android.view.*
+import android.widget.EditText
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
@@ -50,7 +52,7 @@ class SalesFragment : Fragment(), MenuProvider {
                 findNavController().navigate(action)
             },
             onDeleteClick = { saleRecord ->
-                viewModel.deleteSaleRecord(saleRecord)
+                viewModel.deleteSaleRecordWithInventoryUpdate(saleRecord)
                 Snackbar.make(
                     binding.root,
                     "已删除 ${saleRecord.name}",
@@ -73,13 +75,8 @@ class SalesFragment : Fragment(), MenuProvider {
 
     private fun setupFragmentResultListener() {
         setFragmentResultListener("sale_record_key") { _, bundle ->
-            bundle.getParcelable<SaleRecord>("sale_record")?.let { saleRecord ->
+            bundle.getParcelable("sale_record", SaleRecord::class.java)?.let { saleRecord ->
                 viewModel.insertSaleRecord(saleRecord)
-                Snackbar.make(
-                    binding.root,
-                    "已添加 ${saleRecord.name}",
-                    Snackbar.LENGTH_SHORT
-                ).show()
             }
         }
     }
@@ -189,5 +186,27 @@ class SalesFragment : Fragment(), MenuProvider {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun showEditDialog(saleRecord: SaleRecord) {
+        val editText = EditText(requireContext()).apply {
+            setText(saleRecord.note)
+            hint = "添加备注"
+            gravity = Gravity.TOP or Gravity.START
+            minLines = 3
+            maxLines = 5
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("编辑备注")
+            .setView(editText)
+            .setPositiveButton("保存") { _, _ ->
+                val updatedSaleRecord = saleRecord.copy(
+                    note = editText.text.toString().trim()
+                )
+                viewModel.updateSaleRecord(updatedSaleRecord)
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 } 

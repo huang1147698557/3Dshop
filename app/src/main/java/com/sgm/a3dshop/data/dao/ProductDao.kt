@@ -28,8 +28,14 @@ interface ProductDao {
     suspend fun deleteAllProducts()
 
     @Query("SELECT * FROM products WHERE id = :productId")
-    suspend fun getProductById(productId: Long): Product
+    suspend fun getProductById(productId: Int): Product
 
     @Query("SELECT * FROM products ORDER BY createdAt DESC")
     suspend fun getAllProductsSync(): List<Product>
+
+    @Query("UPDATE products SET remainingCount = :newCount WHERE id = :productId")
+    suspend fun updateProductRemainingCount(productId: Int, newCount: Int)
+
+    @Query("SELECT remainingCount FROM products WHERE id = :productId")
+    suspend fun getProductRemainingCount(productId: Int): Int
 } 

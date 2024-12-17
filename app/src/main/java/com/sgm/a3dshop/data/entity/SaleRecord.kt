@@ -3,6 +3,7 @@ package com.sgm.a3dshop.data.entity
 import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
 import java.util.*
@@ -17,6 +18,9 @@ import java.util.*
             childColumns = ["productId"],
             onDelete = ForeignKey.SET_NULL
         )
+    ],
+    indices = [
+        Index("productId")
     ]
 )
 data class SaleRecord(

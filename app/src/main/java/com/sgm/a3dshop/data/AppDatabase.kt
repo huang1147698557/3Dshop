@@ -18,9 +18,10 @@ import com.sgm.a3dshop.data.entity.*
         PendingProduct::class,
         PendingHistory::class,
         IdeaRecord::class,
-        IdeaHistory::class
+        IdeaHistory::class,
+        InventoryLog::class
     ],
-    version = 4,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -32,6 +33,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun pendingHistoryDao(): PendingHistoryDao
     abstract fun ideaRecordDao(): IdeaRecordDao
     abstract fun ideaHistoryDao(): IdeaHistoryDao
+    abstract fun inventoryLogDao(): InventoryLogDao
 
     companion object {
         @Volatile
@@ -44,7 +46,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
@@ -75,6 +77,55 @@ abstract class AppDatabase : RoomDatabase() {
                 // 添加remainingCount字段，默认值设置为quantity
                 database.execSQL("ALTER TABLE products ADD COLUMN remainingCount INTEGER NOT NULL DEFAULT 1")
                 database.execSQL("UPDATE products SET remainingCount = quantity")
+            }
+        }
+
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 创建库存日志表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS inventory_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        productId INTEGER NOT NULL,
+                        operationType TEXT NOT NULL,
+                        beforeCount INTEGER NOT NULL,
+                        afterCount INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL
+                    )
+                """)
+            }
+        }
+
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 创建临时表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS sale_records_temp (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        productId INTEGER,
+                        name TEXT NOT NULL,
+                        salePrice REAL NOT NULL,
+                        imageUrl TEXT,
+                        note TEXT,
+                        createdAt INTEGER NOT NULL,
+                        FOREIGN KEY (productId) REFERENCES products(id) ON DELETE SET NULL
+                    )
+                """)
+
+                // 复制数据
+                database.execSQL("""
+                    INSERT INTO sale_records_temp (id, productId, name, salePrice, imageUrl, note, createdAt)
+                    SELECT id, productId, name, salePrice, imageUrl, note, createdAt FROM sale_records
+                """)
+
+                // 删除旧表
+                database.execSQL("DROP TABLE sale_records")
+
+                // 重命名新表
+                database.execSQL("ALTER TABLE sale_records_temp RENAME TO sale_records")
+
+                // 创建索引
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_sale_records_productId ON sale_records(productId)")
             }
         }
     }

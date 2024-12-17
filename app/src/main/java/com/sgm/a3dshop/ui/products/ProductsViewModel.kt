@@ -24,7 +24,7 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun getProductById(id: Long): LiveData<Product> = liveData {
-        emit(productDao.getProductById(id))
+        emit(productDao.getProductById(id.toInt()))
     }
 
     private fun loadProducts() {

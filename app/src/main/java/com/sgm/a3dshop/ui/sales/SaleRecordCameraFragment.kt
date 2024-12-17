@@ -166,11 +166,11 @@ class SaleRecordCameraFragment : Fragment() {
 
         // 创建销售记录
         val saleRecord = SaleRecord(
+            productId = 0,
             name = name,
             salePrice = price,
             imageUrl = currentPhotoPath,
-            note = note,
-            createdAt = Date()
+            note = note
         )
 
         // 使用 setFragmentResult 传递数据
