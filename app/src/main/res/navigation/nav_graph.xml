@@ -176,4 +176,33 @@
         android:id="@+id/action_productDetailFragment_to_productEditFragment"
         app:destination="@id/productEditFragment" />
 
+    <fragment
+        android:id="@+id/navigation_materials"
+        android:name="com.sgm.a3dshop.ui.materials.MaterialsFragment"
+        android:label="耗材管理"
+        tools:layout="@layout/fragment_materials">
+        <action
+            android:id="@+id/action_materials_to_add"
+            app:destination="@id/material_add_fragment" />
+        <action
+            android:id="@+id/action_materials_to_detail"
+            app:destination="@id/material_detail_fragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/material_add_fragment"
+        android:name="com.sgm.a3dshop.ui.materials.MaterialAddFragment"
+        android:label="添加耗材"
+        tools:layout="@layout/fragment_material_add" />
+
+    <fragment
+        android:id="@+id/material_detail_fragment"
+        android:name="com.sgm.a3dshop.ui.materials.MaterialDetailFragment"
+        android:label="耗材详情"
+        tools:layout="@layout/fragment_material_detail">
+        <argument
+            android:name="materialId"
+            app:argType="long" />
+    </fragment>
+
 </navigation>

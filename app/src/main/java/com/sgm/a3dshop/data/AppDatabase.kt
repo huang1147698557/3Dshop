@@ -19,10 +19,11 @@ import com.sgm.a3dshop.data.entity.*
         PendingHistory::class,
         IdeaRecord::class,
         IdeaHistory::class,
+        Material::class,
         InventoryLog::class
     ],
-    version = 6,
-    exportSchema = false
+    version = 7,
+    exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -33,6 +34,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun pendingHistoryDao(): PendingHistoryDao
     abstract fun ideaRecordDao(): IdeaRecordDao
     abstract fun ideaHistoryDao(): IdeaHistoryDao
+    abstract fun materialDao(): MaterialDao
     abstract fun inventoryLogDao(): InventoryLogDao
 
     companion object {
@@ -46,7 +48,14 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(
+                    MIGRATION_1_2, 
+                    MIGRATION_2_3, 
+                    MIGRATION_3_4, 
+                    MIGRATION_4_5, 
+                    MIGRATION_5_6,
+                    MIGRATION_6_7
+                )
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
@@ -56,33 +65,24 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // 添加新字段
-                database.execSQL("ALTER TABLE products ADD COLUMN laborCost REAL NOT NULL DEFAULT 0.0")
-                database.execSQL("ALTER TABLE products ADD COLUMN plateCount INTEGER NOT NULL DEFAULT 1")
-                database.execSQL("ALTER TABLE products ADD COLUMN materialUnitPrice REAL NOT NULL DEFAULT 0.0")
-                database.execSQL("ALTER TABLE products ADD COLUMN profitRate REAL NOT NULL DEFAULT 0.3")
-                database.execSQL("ALTER TABLE products ADD COLUMN weight REAL NOT NULL DEFAULT 0.0")
-                database.execSQL("ALTER TABLE products ADD COLUMN printTime INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS materials (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        color TEXT,
+                        price REAL NOT NULL,
+                        quantity INTEGER NOT NULL,
+                        remainingPercentage INTEGER NOT NULL,
+                        imageUrl TEXT,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                """)
             }
         }
 
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("ALTER TABLE products ADD COLUMN postProcessingCost REAL NOT NULL DEFAULT 0.0")
-            }
-        }
-
-        private val MIGRATION_3_4 = object : Migration(3, 4) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                // 添加remainingCount字段，默认值设置为quantity
-                database.execSQL("ALTER TABLE products ADD COLUMN remainingCount INTEGER NOT NULL DEFAULT 1")
-                database.execSQL("UPDATE products SET remainingCount = quantity")
-            }
-        }
-
-        private val MIGRATION_4_5 = object : Migration(4, 5) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                // 创建库存日志表
                 database.execSQL("""
                     CREATE TABLE IF NOT EXISTS inventory_logs (
                         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -96,36 +96,54 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 空迁移，保持数据库结构不变
+            }
+        }
+
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 空迁移，保持数据库结构不变
+            }
+        }
+
         private val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // 创建临时表
+                // 空迁移，保持数据库结构不变
+            }
+        }
+
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 重新创建数据库表以确保架构一致性
+                database.execSQL("DROP TABLE IF EXISTS materials")
+                database.execSQL("DROP TABLE IF EXISTS inventory_logs")
+                
                 database.execSQL("""
-                    CREATE TABLE IF NOT EXISTS sale_records_temp (
+                    CREATE TABLE IF NOT EXISTS materials (
                         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                        productId INTEGER,
                         name TEXT NOT NULL,
-                        salePrice REAL NOT NULL,
+                        color TEXT,
+                        price REAL NOT NULL,
+                        quantity INTEGER NOT NULL,
+                        remainingPercentage INTEGER NOT NULL,
                         imageUrl TEXT,
-                        note TEXT,
                         createdAt INTEGER NOT NULL,
-                        FOREIGN KEY (productId) REFERENCES products(id) ON DELETE SET NULL
+                        updatedAt INTEGER NOT NULL
                     )
                 """)
 
-                // 复制数据
                 database.execSQL("""
-                    INSERT INTO sale_records_temp (id, productId, name, salePrice, imageUrl, note, createdAt)
-                    SELECT id, productId, name, salePrice, imageUrl, note, createdAt FROM sale_records
+                    CREATE TABLE IF NOT EXISTS inventory_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        productId INTEGER NOT NULL,
+                        operationType TEXT NOT NULL,
+                        beforeCount INTEGER NOT NULL,
+                        afterCount INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL
+                    )
                 """)
-
-                // 删除旧表
-                database.execSQL("DROP TABLE sale_records")
-
-                // 重命名新表
-                database.execSQL("ALTER TABLE sale_records_temp RENAME TO sale_records")
-
-                // 创建索引
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_sale_records_productId ON sale_records(productId)")
             }
         }
     }

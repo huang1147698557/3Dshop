@@ -39,7 +39,7 @@ android {
             minifyEnabled false
             //开启资源压缩
             shrinkResources false
-            //Zipalign优化
+            //Zipalign优��
             zipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }

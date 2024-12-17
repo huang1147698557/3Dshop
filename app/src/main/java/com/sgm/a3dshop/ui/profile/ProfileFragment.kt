@@ -35,6 +35,7 @@ import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import com.sgm.a3dshop.R
 import java.io.File
+import androidx.navigation.fragment.findNavController
 
 class ProfileFragment : Fragment() {
     private var _binding: FragmentProfileBinding? = null
@@ -73,6 +74,23 @@ class ProfileFragment : Fragment() {
         dataTransferManager = DataTransferManager(requireContext())
         setupViews()
         observeData()
+
+        binding.btnMaterials.setOnClickListener {
+            findNavController().navigate(R.id.navigation_materials)
+        }
+
+        // 设置其他按钮的点击事件
+        binding.btnRecord.setOnClickListener {
+            // 处理录音按钮点击
+        }
+
+        binding.btnExport.setOnClickListener {
+            // 处理导出数据按钮点击
+        }
+
+        binding.btnImport.setOnClickListener {
+            // 处理导入数据按钮点击
+        }
     }
 
     private fun setupViews() {
@@ -242,7 +260,7 @@ class ProfileFragment : Fragment() {
                         // 删除临时文件
                         tempFile.delete()
                         
-                        // 刷新���据
+                        // 刷新数据
                         viewModel.refreshData()
                     } catch (e: Exception) {
                         Toast.makeText(requireContext(), "导入错误: ${e.message}", Toast.LENGTH_SHORT).show()
