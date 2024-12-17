@@ -2,6 +2,7 @@ package com.sgm.a3dshop.ui.materials
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -48,7 +49,9 @@ class MaterialAdapter(
                 if (position != RecyclerView.NO_POSITION) {
                     val material = getItem(position)
                     if (material.quantity > 0) {
-                        onQuantityChange(material, material.quantity - 1)
+                        val newQuantity = material.quantity - 1
+                        onQuantityChange(material, newQuantity)
+                        updateItemAppearance(material.copy(quantity = newQuantity))
                     }
                 }
             }
@@ -57,7 +60,9 @@ class MaterialAdapter(
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     val material = getItem(position)
-                    onQuantityChange(material, material.quantity + 1)
+                    val newQuantity = material.quantity + 1
+                    onQuantityChange(material, newQuantity)
+                    updateItemAppearance(material.copy(quantity = newQuantity))
                 }
             }
 
@@ -77,7 +82,9 @@ class MaterialAdapter(
                     seekBar?.let {
                         val position = adapterPosition
                         if (position != RecyclerView.NO_POSITION) {
-                            onRemainingChange(getItem(position), it.progress)
+                            val material = getItem(position)
+                            onRemainingChange(material, it.progress)
+                            updateItemAppearance(material.copy(remainingPercentage = it.progress))
                         }
                     }
                 }
@@ -89,11 +96,7 @@ class MaterialAdapter(
                 tvName.text = material.name
                 tvColor.text = material.color?.let { "颜色：$it" } ?: "颜色：未设置"
                 tvPrice.text = "价格：${NumberFormat.getCurrencyInstance(Locale.CHINA).format(material.price)}"
-                
                 quantityController.etQuantity.setText(material.quantity.toString())
-                quantityController.btnMinus.isEnabled = material.quantity > 0
-                quantityController.btnPlus.isEnabled = true
-
                 seekBarRemaining.progress = material.remainingPercentage
                 tvRemainingPercentage.text = "${material.remainingPercentage}%"
 
@@ -103,6 +106,41 @@ class MaterialAdapter(
                     .error(R.drawable.ic_image_error)
                     .centerCrop()
                     .into(ivMaterial)
+
+                updateItemAppearance(material)
+            }
+        }
+
+        private fun updateItemAppearance(material: Material) {
+            binding.apply {
+                val isQuantityZero = material.quantity == 0
+                
+                // 设置整体透明度
+                root.alpha = if (isQuantityZero) 0.5f else 1.0f
+                ivMaterial.alpha = if (isQuantityZero) 0.5f else 1.0f
+                
+                // 设置文字颜色
+                val context = root.context
+                tvName.setTextColor(ContextCompat.getColor(context, 
+                    if (isQuantityZero) android.R.color.darker_gray else android.R.color.black))
+                tvPrice.setTextColor(ContextCompat.getColor(context, 
+                    if (isQuantityZero) android.R.color.darker_gray else android.R.color.holo_red_light))
+                tvColor.setTextColor(ContextCompat.getColor(context,
+                    if (isQuantityZero) android.R.color.darker_gray else android.R.color.black))
+                
+                // 更新数量控制器状态
+                quantityController.btnMinus.isEnabled = !isQuantityZero
+                quantityController.btnMinus.alpha = if (isQuantityZero) 0.5f else 1.0f
+                quantityController.etQuantity.isEnabled = !isQuantityZero
+                quantityController.etQuantity.alpha = if (isQuantityZero) 0.5f else 1.0f
+                quantityController.btnPlus.isEnabled = true
+                quantityController.btnPlus.alpha = 1.0f
+
+                // 更新滑动条状态
+                seekBarRemaining.isEnabled = !isQuantityZero
+                seekBarRemaining.alpha = if (isQuantityZero) 0.5f else 1.0f
+                tvRemaining.alpha = if (isQuantityZero) 0.5f else 1.0f
+                tvRemainingPercentage.alpha = if (isQuantityZero) 0.5f else 1.0f
             }
         }
     }
@@ -114,6 +152,11 @@ class MaterialDiffCallback : DiffUtil.ItemCallback<Material>() {
     }
 
     override fun areContentsTheSame(oldItem: Material, newItem: Material): Boolean {
-        return oldItem == newItem
+        return oldItem.name == newItem.name &&
+               oldItem.color == newItem.color &&
+               oldItem.price == newItem.price &&
+               oldItem.quantity == newItem.quantity &&
+               oldItem.remainingPercentage == newItem.remainingPercentage &&
+               oldItem.imageUrl == newItem.imageUrl
     }
 } 

@@ -70,12 +70,12 @@
             android:id="@+id/seekBarRemaining"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="0dp"
             android:max="100"
             android:progress="50"
             app:layout_constraintBottom_toBottomOf="@+id/tvRemaining"
-            app:layout_constraintEnd_toStartOf="@+id/tvRemainingPercentage"
             app:layout_constraintStart_toEndOf="@+id/tvRemaining"
+            app:layout_constraintWidth_percent="0.6"
             app:layout_constraintTop_toTopOf="@+id/tvRemaining" />
 
         <TextView
@@ -86,7 +86,7 @@
             android:minWidth="48dp"
             android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="@+id/seekBarRemaining"
-            app:layout_constraintEnd_toStartOf="@+id/ivMaterial"
+            app:layout_constraintStart_toEndOf="@+id/seekBarRemaining"
             app:layout_constraintTop_toTopOf="@+id/seekBarRemaining"
             tools:text="50%" />
 

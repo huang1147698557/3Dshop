@@ -8,7 +8,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.sgm.a3dshop.R
@@ -63,25 +62,6 @@ class MaterialsFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = this@MaterialsFragment.adapter
         }
-
-        // 添加右滑删除功能
-        ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            0, ItemTouchHelper.LEFT
-        ) {
-            override fun onMove(
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                target: RecyclerView.ViewHolder
-            ): Boolean = false
-
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
-                val material = adapter.currentList[position]
-                viewLifecycleOwner.lifecycleScope.launch {
-                    viewModel.deleteMaterial(material)
-                }
-            }
-        }).attachToRecyclerView(binding.recyclerView)
     }
 
     private fun setupFab() {

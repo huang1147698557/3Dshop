@@ -33,10 +33,11 @@ class MaterialsViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun updateMaterialQuantity(material: Material, newQuantity: Int) {
         viewModelScope.launch {
-            materialDao.update(material.copy(
+            val updatedMaterial = material.copy(
                 quantity = newQuantity,
                 updatedAt = Date()
-            ))
+            )
+            materialDao.update(updatedMaterial)
         }
     }
 

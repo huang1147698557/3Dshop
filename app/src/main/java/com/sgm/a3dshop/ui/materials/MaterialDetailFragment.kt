@@ -94,6 +94,10 @@ class MaterialDetailFragment : Fragment() {
             showImagePickerDialog()
         }
 
+        binding.btnDelete.setOnClickListener {
+            showDeleteConfirmationDialog()
+        }
+
         binding.quantityController.btnMinus.setOnClickListener {
             val currentQuantity = binding.quantityController.etQuantity.text.toString().toIntOrNull() ?: 0
             if (currentQuantity > 0) {
@@ -250,6 +254,25 @@ class MaterialDetailFragment : Fragment() {
             )
             viewModel.updateMaterial(updatedMaterial)
             Toast.makeText(requireContext(), "保存成功", Toast.LENGTH_SHORT).show()
+            findNavController().navigateUp()
+        }
+    }
+
+    private fun showDeleteConfirmationDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("确认删除")
+            .setMessage("确定要删除这个耗材吗？此操作不可撤销。")
+            .setPositiveButton("删除") { _, _ ->
+                deleteMaterial()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun deleteMaterial() {
+        currentMaterial?.let { material ->
+            viewModel.deleteMaterial(material)
+            Toast.makeText(requireContext(), "删除成功", Toast.LENGTH_SHORT).show()
             findNavController().navigateUp()
         }
     }
